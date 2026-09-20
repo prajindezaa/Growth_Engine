@@ -28,112 +28,107 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <>
-      <div style={{ marginBottom: "28px" }}>
-        <h1
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: 700,
-            color: "var(--ge-text-primary)",
-            marginBottom: "6px",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Reset your password
-        </h1>
-        <p
-          style={{
-            fontSize: "0.875rem",
-            color: "var(--ge-text-secondary)",
-          }}
-        >
-          Enter your email and we&apos;ll send you a reset link
-        </p>
+    <div className="ge-auth-card">
+      {/* Top navigation header */}
+      <div className="ge-auth-nav-top">
+        <Link href="/login" className="ge-auth-back-btn" aria-label="Go back to Login">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+        </Link>
+        <span className="ge-auth-brand-name">GrowthEngine</span>
+        <div style={{ width: "36px" }} />
+      </div>
+
+      {/* Title */}
+      <div className="ge-auth-title-section" style={{ marginTop: "16px" }}>
+        <h1 className="ge-auth-title">Reset Password</h1>
+        <p className="ge-auth-subtitle">Enter your email and we&apos;ll send a reset link</p>
       </div>
 
       {error && (
-        <div className="ge-error" style={{ marginBottom: "20px" }}>
-          {error}
+        <div className="ge-auth-error-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="ge-success" style={{ marginBottom: "20px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              style={{ flexShrink: 0 }}
-            >
-              <path
-                d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.97 10.47 4.72 8.22l.56-.56L6.97 9.34l3.75-3.75.56.56-4.31 4.32Z"
-                fill="currentColor"
-              />
-            </svg>
-            {success}
-          </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            background: "#ECFDF5",
+            border: "1px solid #A7F3D0",
+            color: "#059669",
+            padding: "12px 16px",
+            borderRadius: "16px",
+            fontSize: "14px",
+            fontWeight: 600,
+            marginBottom: "20px",
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>{success}</span>
         </div>
       )}
 
       {!success && (
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "24px" }}>
-            <label htmlFor="forgot-email" className="ge-label">
-              Email
-            </label>
-            <input
-              id="forgot-email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="you@example.com"
-              className="ge-input"
-            />
+        <form onSubmit={handleSubmit} className="ge-auth-form">
+          <div className="ge-floating-input-group">
+            <label htmlFor="forgot-email" className="ge-floating-label">Email</label>
+            <div className="ge-pill-input-box">
+              <span className="ge-input-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+              </span>
+              <input
+                id="forgot-email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@example.com"
+                className="ge-pill-input"
+              />
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="ge-btn-primary"
+            className="ge-pill-btn-primary"
+            style={{ marginTop: "16px" }}
           >
-            <span>
-              {loading ? (
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <span className="ge-spinner" />
-                  Sending…
-                </span>
-              ) : (
-                "Send reset link"
-              )}
-            </span>
+            {loading ? (
+              <span className="ge-btn-loading-content">
+                <span className="ge-btn-spinner" />
+                Sending link…
+              </span>
+            ) : (
+              "Send reset link"
+            )}
           </button>
         </form>
       )}
 
-      <div className="ge-divider" />
-
-      <p
-        style={{
-          textAlign: "center",
-          fontSize: "0.875rem",
-          color: "var(--ge-text-secondary)",
-        }}
-      >
-        Remember your password?{" "}
-        <Link href="/login" className="ge-link">
-          Sign in
+      {/* Switch to Login */}
+      <div className="ge-auth-footer" style={{ marginTop: "36px" }}>
+        <span>Remember your password? </span>
+        <Link href="/login" className="ge-auth-switch-link">
+          Login
         </Link>
-      </p>
-    </>
+      </div>
+    </div>
   );
 }

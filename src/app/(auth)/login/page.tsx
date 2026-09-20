@@ -7,6 +7,8 @@ import { signIn } from "../actions";
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,158 +22,183 @@ export default function LoginPage() {
       setError(result.error);
       setLoading(false);
     }
-    // On success, signIn redirects — no need to setLoading(false)
   }
 
   return (
-    <>
-      <div style={{ marginBottom: "var(--space-3)" }}>
-        <h1
-          style={{
-            fontSize: "var(--font-lg)",
-            fontWeight: 700,
-            color: "var(--text-primary)",
-            marginBottom: "4px",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Welcome back
-        </h1>
-        <p
-          style={{
-            fontSize: "var(--font-sm)",
-            color: "var(--text-muted)",
-            margin: 0,
-          }}
-        >
-          Sign in to your GrowthEngine account
-        </p>
+    <div className="ge-auth-card">
+      {/* Brand Header */}
+      <div className="ge-auth-header">
+        <div className="ge-auth-brand-emblem">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <span className="ge-auth-brand-name">GrowthEngine</span>
+      </div>
+
+      {/* Title & Welcome */}
+      <div className="ge-auth-title-section">
+        <h1 className="ge-auth-title">Welcome to GrowthEngine</h1>
+        <p className="ge-auth-subtitle">Login now!</p>
       </div>
 
       {error && (
-        <div
-          style={{
-            backgroundColor: "var(--danger-bg)",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            color: "var(--danger)",
-            padding: "10px 14px",
-            borderRadius: "var(--radius-sm)",
-            fontSize: "var(--font-sm)",
-            marginBottom: "var(--space-2)",
-          }}
-        >
-          {error}
+        <div className="ge-auth-error-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-        <div>
-          <label
-            htmlFor="login-email"
-            style={{
-              display: "block",
-              fontSize: "var(--font-xs)",
-              fontWeight: 500,
-              color: "var(--text-secondary)",
-              marginBottom: "6px",
-            }}
-          >
-            Email
-          </label>
-          <input
-            id="login-email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            placeholder="you@example.com"
-            className="ge-input"
-          />
+      <form onSubmit={handleSubmit} className="ge-auth-form">
+        {/* Email Pill Input */}
+        <div className="ge-floating-input-group">
+          <label htmlFor="login-email" className="ge-floating-label">Email</label>
+          <div className="ge-pill-input-box">
+            <span className="ge-input-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+            </span>
+            <input
+              id="login-email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+              className="ge-pill-input"
+            />
+          </div>
         </div>
 
-        <div>
-          <label
-            htmlFor="login-password"
-            style={{
-              display: "block",
-              fontSize: "var(--font-xs)",
-              fontWeight: 500,
-              color: "var(--text-secondary)",
-              marginBottom: "6px",
-            }}
-          >
-            Password
-          </label>
-          <input
-            id="login-password"
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-            placeholder="••••••••"
-            className="ge-input"
-          />
+        {/* Password Pill Input with Visibility Toggle */}
+        <div className="ge-floating-input-group">
+          <label htmlFor="login-password" className="ge-floating-label">Password</label>
+          <div className="ge-pill-input-box">
+            <span className="ge-input-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </span>
+            <input
+              id="login-password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              required
+              autoComplete="current-password"
+              placeholder="••••••••"
+              className="ge-pill-input"
+            />
+            <button
+              type="button"
+              className="ge-eye-toggle-btn"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "-4px" }}>
-          <Link
-            href="/forgot-password"
-            style={{
-              fontSize: "var(--font-xs)",
-              color: "var(--primary)",
-              textDecoration: "none",
-              fontWeight: 500,
-            }}
-          >
+        {/* Remember me & Forgot Password */}
+        <div className="ge-auth-options-row">
+          <label className="ge-checkbox-label">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="ge-custom-checkbox"
+            />
+            <span>Remember me</span>
+          </label>
+          <Link href="/forgot-password" className="ge-forgot-link">
             Forgot password?
           </Link>
         </div>
 
+        {/* Emerald Green Pill CTA Button */}
         <button
           type="submit"
           disabled={loading}
-          style={{
-            width: "100%",
-            padding: "10px 16px",
-            backgroundColor: "var(--primary)",
-            color: "#FFFFFF",
-            border: "none",
-            borderRadius: "var(--radius-sm)",
-            fontSize: "var(--font-sm)",
-            fontWeight: 600,
-            cursor: loading ? "not-allowed" : "pointer",
-            boxShadow: "var(--shadow-sm)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-            marginTop: "8px",
-          }}
+          className="ge-pill-btn-primary"
         >
-          {loading ? "Signing in…" : "Sign In"}
+          {loading ? (
+            <span className="ge-btn-loading-content">
+              <span className="ge-btn-spinner" />
+              Signing in…
+            </span>
+          ) : (
+            "Login"
+          )}
         </button>
       </form>
 
-      <p
-        style={{
-          marginTop: "var(--space-3)",
-          textAlign: "center",
-          fontSize: "var(--font-sm)",
-          color: "var(--text-muted)",
-        }}
-      >
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/signup"
-          style={{
-            color: "var(--primary)",
-            textDecoration: "none",
-            fontWeight: 600,
-          }}
-        >
-          Sign up
+      {/* Social Divider */}
+      <div className="ge-auth-divider">
+        <span>Or Log in with</span>
+      </div>
+
+      {/* Social Circular Icon Badges matching reference */}
+      <div className="ge-social-buttons-row">
+        <button type="button" className="ge-social-circle-btn" aria-label="Sign in with Google">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path
+              fill="#EA4335"
+              d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.4l3.7 2.9C6.5 7.4 9 5 12 5z"
+            />
+            <path
+              fill="#4285F4"
+              d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.6 14.7c-.2-.7-.4-1.5-.4-2.7s.1-2 .4-2.7L1.9 6.4C.7 8.8 0 10.3 0 12s.7 3.2 1.9 5.6l3.7-2.9z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.3L1.9 16c1.8 3.7 5.6 7 10.1 7z"
+            />
+          </svg>
+        </button>
+
+        <button type="button" className="ge-social-circle-btn" aria-label="Sign in with Facebook">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+          </svg>
+        </button>
+
+        <button type="button" className="ge-social-circle-btn" aria-label="Sign in with Apple">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.85c.66-.8 1.1-1.92.98-3.04-.95.04-2.1.64-2.77 1.43-.59.69-1.11 1.82-.97 2.91 1.06.08 2.14-.54 2.76-1.3z" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Switch to Signup */}
+      <div className="ge-auth-footer">
+        <span>Didn&apos;t have an account? </span>
+        <Link href="/signup" className="ge-auth-switch-link">
+          Create an account
         </Link>
-      </p>
-    </>
+      </div>
+    </div>
   );
 }

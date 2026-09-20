@@ -616,3 +616,514 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ================================================================
+   Mobile-First Auth System (Inspired by Dribbble Mobile App Design)
+   ================================================================ */
+
+.ge-auth-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background-color: #F1FDF6; /* Clean soft organic green backdrop */
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  padding: 0;
+}
+
+[data-theme="dark"] .ge-auth-wrapper,
+:root:not([data-theme="light"]) .ge-auth-wrapper {
+  background-color: #061A14;
+}
+
+/* Fluid Organic Ambient Light Blobs */
+.ge-auth-bg-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.ge-auth-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.6;
+}
+
+.ge-auth-blob-1 {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.28) 0%, transparent 70%);
+  top: -100px;
+  left: -80px;
+}
+
+.ge-auth-blob-2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.22) 0%, transparent 70%);
+  bottom: -150px;
+  right: -100px;
+}
+
+.ge-auth-blob-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(110, 231, 183, 0.3) 0%, transparent 70%);
+  top: 40%;
+  right: 15%;
+}
+
+/* Container: Fullscreen on mobile, phone-frame card on desktop */
+.ge-auth-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .ge-auth-container {
+    min-height: auto;
+    padding: 32px 16px;
+  }
+}
+
+.ge-auth-card {
+  width: 100%;
+  max-width: 420px;
+  min-height: 100vh;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 28px;
+  box-sizing: border-box;
+}
+
+/* On desktop, shape it like the phone mockups in the reference */
+@media (min-width: 640px) {
+  .ge-auth-card {
+    min-height: auto;
+    border-radius: 36px;
+    box-shadow: 0 20px 48px rgba(16, 185, 129, 0.12), 0 4px 16px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    padding: 40px 32px;
+  }
+}
+
+[data-theme="dark"] .ge-auth-card,
+:root:not([data-theme="light"]) .ge-auth-card {
+  background: #0B1E19;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* Header & Logo */
+.ge-auth-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.ge-auth-nav-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.ge-auth-back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .ge-auth-back-btn,
+:root:not([data-theme="light"]) .ge-auth-back-btn {
+  background: #162E27;
+  border-color: #234E42;
+  color: #F8FAFC;
+}
+
+.ge-auth-brand-emblem {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.ge-auth-brand-name {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -0.02em;
+}
+
+[data-theme="dark"] .ge-auth-brand-name,
+:root:not([data-theme="light"]) .ge-auth-brand-name {
+  color: #F8FAFC;
+}
+
+/* Title & Subtitle matching Glamify typography */
+.ge-auth-title-section {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.ge-auth-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.025em;
+}
+
+[data-theme="dark"] .ge-auth-title,
+:root:not([data-theme="light"]) .ge-auth-title {
+  color: #F8FAFC;
+}
+
+.ge-auth-subtitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: #64748B;
+  margin: 0;
+}
+
+[data-theme="dark"] .ge-auth-subtitle,
+:root:not([data-theme="light"]) .ge-auth-subtitle {
+  color: #94A3B8;
+}
+
+/* Error Banner */
+.ge-auth-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+[data-theme="dark"] .ge-auth-error-banner,
+:root:not([data-theme="light"]) .ge-auth-error-banner {
+  background-color: rgba(220, 38, 38, 0.15);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #FCA5A5;
+}
+
+/* Form & Floating-style pill inputs */
+.ge-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ge-floating-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ge-floating-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  padding-left: 6px;
+}
+
+[data-theme="dark"] .ge-floating-label,
+:root:not([data-theme="light"]) .ge-floating-label {
+  color: #94A3B8;
+}
+
+.ge-pill-input-box {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 9999px; /* Pill input shape from reference */
+  padding: 0 16px;
+  height: 52px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .ge-pill-input-box,
+:root:not([data-theme="light"]) .ge-pill-input-box {
+  background: #122822;
+  border-color: #1F4238;
+}
+
+.ge-pill-input-box:focus-within {
+  border-color: #10B981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+}
+
+.ge-input-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94A3B8;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.ge-pill-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: #0F172A;
+  outline: none;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .ge-pill-input,
+:root:not([data-theme="light"]) .ge-pill-input {
+  color: #F8FAFC;
+}
+
+.ge-pill-input::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+.ge-eye-toggle-btn {
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.ge-eye-toggle-btn:hover {
+  color: #10B981;
+}
+
+/* Options row: checkbox & forgot password */
+.ge-auth-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 6px;
+  font-size: 13px;
+}
+
+.ge-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748B;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .ge-checkbox-label,
+:root:not([data-theme="light"]) .ge-checkbox-label {
+  color: #94A3B8;
+}
+
+.ge-custom-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #10B981;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ge-forgot-link {
+  color: #64748B;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.ge-forgot-link:hover {
+  color: #10B981;
+}
+
+/* Emerald Pill Button matching reference */
+.ge-pill-btn-primary {
+  width: 100%;
+  height: 52px;
+  border-radius: 9999px;
+  background: #10B981; /* Primary Emerald green */
+  color: #FFFFFF;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ge-pill-btn-primary:hover:not(:disabled) {
+  background: #059669;
+  box-shadow: 0 8px 22px rgba(16, 185, 129, 0.45);
+  transform: translateY(-1px);
+}
+
+.ge-pill-btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ge-pill-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ge-btn-loading-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ge-btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: ge-spin 0.7s linear infinite;
+}
+
+@keyframes ge-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Social Divider */
+.ge-auth-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin: 28px 0 20px 0;
+  position: relative;
+}
+
+.ge-auth-divider::before,
+.ge-auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #E2E8F0;
+}
+
+[data-theme="dark"] .ge-auth-divider::before,
+[data-theme="dark"] .ge-auth-divider::after {
+  background: #1E3830;
+}
+
+.ge-auth-divider span {
+  padding: 0 14px;
+  font-size: 13px;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+/* Social Circular Buttons (Google, Facebook, Apple) */
+.ge-social-buttons-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.ge-social-circle-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  color: #0F172A;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-theme="dark"] .ge-social-circle-btn,
+:root:not([data-theme="light"]) .ge-social-circle-btn {
+  background: #122822;
+  border-color: #1F4238;
+  color: #F8FAFC;
+}
+
+.ge-social-circle-btn:hover {
+  transform: translateY(-2px);
+  border-color: #CBD5E1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.ge-social-circle-btn:active {
+  transform: scale(0.92);
+}
+
+/* Switch link (footer) */
+.ge-auth-footer {
+  text-align: center;
+  font-size: 14px;
+  color: #64748B;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+[data-theme="dark"] .ge-auth-footer,
+:root:not([data-theme="light"]) .ge-auth-footer {
+  color: #94A3B8;
+}
+
+.ge-auth-switch-link {
+  color: #10B981;
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.ge-auth-switch-link:hover {
+  text-decoration: underline;
+}
+
+
