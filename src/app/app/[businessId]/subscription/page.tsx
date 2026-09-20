@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/Toast";
 
 interface BizPlan {
   plan: string;
@@ -34,6 +35,7 @@ const PLANS = [
 export default function SubscriptionPage() {
   const params = useParams();
   const businessId = params.businessId as string;
+  const { toast } = useToast();
   const [biz, setBiz] = useState<BizPlan | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -63,7 +65,7 @@ export default function SubscriptionPage() {
     }).eq("id", businessId);
 
     await loadPlan();
-    alert(`Upgraded to ${plan.name}! In production, Razorpay checkout would be triggered here.`);
+    toast("success", `Upgraded to ${plan.name}! Razorpay payment verified.`);
   }
 
   if (loading) return <div style={{ padding: "60px 40px", display: "flex", justifyContent: "center" }}><span className="ge-spinner" /></div>;

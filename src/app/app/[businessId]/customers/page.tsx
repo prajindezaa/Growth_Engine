@@ -5,6 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Customer } from "@/lib/types";
 import Link from "next/link";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { DataTable, Column } from "@/components/ui/DataTable";
+import { DetailPanel } from "@/components/ui/DetailPanel";
+import { MobileCardList } from "@/components/ui/MobileCardList";
 
 export default function CustomersPage() {
   const params = useParams();
@@ -14,8 +21,7 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "outstanding_balance" | "created_at">("name");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   useEffect(() => {
     loadCustomers();
@@ -33,272 +39,286 @@ export default function CustomersPage() {
     setLoading(false);
   }
 
-  function handleSort(col: typeof sortBy) {
-    if (sortBy === col) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortBy(col);
-      setSortAsc(true);
-    }
-  }
-
-  const filtered = customers
-    .filter((c) => {
-      if (!search.trim()) return true;
-      const q = search.toLowerCase();
-      return (
-        c.name.toLowerCase().includes(q) ||
-        (c.phone || "").toLowerCase().includes(q) ||
-        (c.email || "").toLowerCase().includes(q)
-      );
-    })
-    .sort((a, b) => {
-      let cmp = 0;
-      if (sortBy === "name") cmp = a.name.localeCompare(b.name);
-      else if (sortBy === "outstanding_balance") cmp = a.outstanding_balance - b.outstanding_balance;
-      else if (sortBy === "created_at") cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      return sortAsc ? cmp : -cmp;
-    });
-
-  if (loading) {
+  const filtered = customers.filter((c) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
     return (
-      <div style={{ padding: "60px 40px", display: "flex", justifyContent: "center" }}>
-        <span className="ge-spinner" />
-      </div>
+      c.name.toLowerCase().includes(q) ||
+      (c.phone || "").toLowerCase().includes(q) ||
+      (c.email || "").toLowerCase().includes(q)
     );
-  }
+  });
 
-  return (
-    <div style={{ padding: "40px" }}>
-      <div className="ge-animate-in">
-        {/* Header */}
-        <div
+  const columns: Column<Customer>[] = [
+    {
+      header: "Customer Name",
+      accessor: (c) => (
+        <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+          {c.name}
+        </span>
+      ),
+    },
+    {
+      header: "Phone",
+      accessor: (c) => (
+        <span style={{ color: "var(--text-secondary)", fontSize: "var(--font-sm)" }}>
+          {c.phone || "—"}
+        </span>
+      ),
+    },
+    {
+      header: "Email",
+      accessor: (c) => (
+        <span style={{ color: "var(--text-secondary)", fontSize: "var(--font-sm)" }}>
+          {c.email || "—"}
+        </span>
+      ),
+    },
+    {
+      header: "Type",
+      accessor: (c) => (
+        <span
+          className="ge-badge ge-badge-neutral"
+          style={{ textTransform: "capitalize" }}
+        >
+          {c.customer_type}
+        </span>
+      ),
+    },
+    {
+      header: "Outstanding Balance",
+      align: "right",
+      accessor: (c) => (
+        <span
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "24px",
+            fontFamily: "monospace",
+            fontWeight: 700,
+            fontSize: "var(--font-sm)",
+            color: c.outstanding_balance > 0 ? "var(--danger)" : "var(--success)",
           }}
         >
-          <div>
-            <h1
-              style={{
-                fontSize: "1.5rem",
-                fontWeight: 700,
-                color: "var(--ge-text-primary)",
-                letterSpacing: "-0.02em",
-                marginBottom: "4px",
-              }}
-            >
-              Customers
-            </h1>
-            <p style={{ fontSize: "0.875rem", color: "var(--ge-text-secondary)" }}>
-              {customers.length} customer{customers.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <Link
-            href={`/app/${businessId}/customers/new`}
-            className="ge-btn-primary"
-            style={{
-              width: "auto",
-              padding: "10px 20px",
-              fontSize: "0.875rem",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-          >
-            <span>+ Add customer</span>
-          </Link>
-        </div>
+          ₹{c.outstanding_balance.toLocaleString("en-IN")}
+        </span>
+      ),
+    },
+  ];
 
-        {/* Search */}
-        <div style={{ marginBottom: "20px" }}>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, phone, or email…"
-            className="ge-input"
-            style={{ maxWidth: "400px" }}
-          />
-        </div>
+  return (
+    <div className="ge-page-container">
+      {/* Desktop Header */}
+      <div className="ge-desktop-only">
+        <PageHeader
+          title="Customers"
+          description={`${customers.length} registered business account${customers.length !== 1 ? "s" : ""}`}
+          action={
+            <Link href={`/app/${businessId}/customers/new`} style={{ textDecoration: "none" }}>
+              <Button variant="primary" icon="＋">Add Customer</Button>
+            </Link>
+          }
+        />
+      </div>
 
-        {/* Table */}
-        {filtered.length === 0 ? (
-          <div
-            style={{
-              background: "var(--ge-bg-card)",
-              border: "1px solid var(--ge-border)",
-              borderRadius: "var(--ge-radius-lg)",
-              padding: "48px",
-              textAlign: "center",
-              backdropFilter: "blur(20px)",
-            }}
-          >
-            <div style={{ fontSize: "2rem", marginBottom: "12px" }}>👤</div>
-            <h2
-              style={{
-                fontSize: "1.125rem",
-                fontWeight: 600,
-                color: "var(--ge-text-primary)",
-                marginBottom: "8px",
-              }}
-            >
-              {search ? "No customers found" : "No customers yet"}
-            </h2>
-            <p
-              style={{
-                fontSize: "0.875rem",
-                color: "var(--ge-text-secondary)",
-                marginBottom: "20px",
-              }}
-            >
-              {search
-                ? "Try a different search term."
-                : "Add your first customer to get started."}
-            </p>
-            {!search && (
-              <Link
-                href={`/app/${businessId}/customers/new`}
-                className="ge-btn-primary"
-                style={{
-                  width: "auto",
-                  padding: "10px 24px",
-                  display: "inline-flex",
-                  textDecoration: "none",
-                }}
-              >
-                <span>+ Add customer</span>
-              </Link>
-            )}
+      {/* Content State */}
+      {loading ? (
+        <TableSkeleton rows={6} />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon="👤"
+          title={search ? "No customers found" : "No customers registered yet"}
+          description={
+            search
+              ? "No customer matches your query. Try a different search term or phone number."
+              : "Keep track of all your buyers, credit balances, and order histories in one place."
+          }
+          actionLabel={search ? undefined : "Add Your First Customer"}
+          actionHref={search ? undefined : `/app/${businessId}/customers/new`}
+        />
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="ge-desktop-only">
+            <div style={{ marginBottom: "var(--space-3)" }}>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search customers by name, phone, or email…"
+                className="ge-input"
+                style={{ maxWidth: "420px" }}
+              />
+            </div>
+            <DataTable
+              columns={columns}
+              data={filtered}
+              keyExtractor={(c) => c.id}
+              onRowClick={(c) => setSelectedCustomer(c)}
+            />
           </div>
-        ) : (
-          <div
-            style={{
-              background: "var(--ge-bg-card)",
-              border: "1px solid var(--ge-border)",
-              borderRadius: "var(--ge-radius-lg)",
-              overflow: "hidden",
-              backdropFilter: "blur(20px)",
-            }}
-          >
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr
+
+          {/* Mobile Card List View (Thumb Optimized, Reachable) */}
+          <div className="ge-mobile-only">
+            <div style={{ padding: "12px 0 6px 0" }}>
+              <h1 style={{ fontSize: "1.35rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
+                Customers
+              </h1>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "2px 0 8px 0" }}>
+                {filtered.length} client{filtered.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+
+            <MobileCardList
+              items={filtered}
+              keyExtractor={(c) => c.id}
+              searchPlaceholder="Search name or phone..."
+              onSearchChange={(q) => setSearch(q)}
+              onItemClick={(c) => setSelectedCustomer(c)}
+              renderPrimary={(c) => c.name}
+              renderSecondary={(c) => (
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <span>📞 {c.phone || "No phone"}</span>
+                  <span style={{ textTransform: "capitalize" }}>• {c.customer_type}</span>
+                </div>
+              )}
+              renderMetric={(c) => (
+                <span
                   style={{
-                    borderBottom: "1px solid var(--ge-border)",
-                    fontSize: "0.75rem",
-                    color: "var(--ge-text-muted)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
+                    color: c.outstanding_balance > 0 ? "var(--danger)" : "var(--success)",
                   }}
                 >
-                  <SortHeader label="Name" col="name" current={sortBy} asc={sortAsc} onClick={handleSort} />
-                  <th style={thStyle}>Phone</th>
-                  <th style={thStyle}>Email</th>
-                  <th style={thStyle}>Type</th>
-                  <SortHeader label="Outstanding" col="outstanding_balance" current={sortBy} asc={sortAsc} onClick={handleSort} />
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((customer) => (
-                  <tr
-                    key={customer.id}
-                    onClick={() =>
-                      router.push(`/app/${businessId}/customers/${customer.id}`)
-                    }
-                    style={{
-                      borderBottom: "1px solid var(--ge-border)",
-                      cursor: "pointer",
-                      transition: "background var(--ge-transition)",
-                    }}
-                    className="ge-table-row"
-                  >
-                    <td style={tdStyle}>
-                      <span style={{ fontWeight: 500, color: "var(--ge-text-primary)" }}>
-                        {customer.name}
-                      </span>
-                    </td>
-                    <td style={tdStyle}>{customer.phone || "—"}</td>
-                    <td style={tdStyle}>{customer.email || "—"}</td>
-                    <td style={tdStyle}>
-                      <span
-                        style={{
-                          padding: "2px 8px",
-                          borderRadius: "var(--ge-radius-full)",
-                          fontSize: "0.6875rem",
-                          fontWeight: 600,
-                          textTransform: "capitalize",
-                          background:
-                            customer.customer_type === "wholesale"
-                              ? "rgba(139,92,246,0.12)"
-                              : customer.customer_type === "distributor"
-                              ? "rgba(52,211,153,0.12)"
-                              : "rgba(107,114,128,0.12)",
-                          color:
-                            customer.customer_type === "wholesale"
-                              ? "#a78bfa"
-                              : customer.customer_type === "distributor"
-                              ? "#34d399"
-                              : "#9ca3af",
-                        }}
-                      >
-                        {customer.customer_type}
-                      </span>
-                    </td>
-                    <td style={{ ...tdStyle, fontFamily: "monospace", fontWeight: 500 }}>
-                      {customer.outstanding_balance > 0 ? (
-                        <span style={{ color: "var(--ge-error)" }}>
-                          ₹{customer.outstanding_balance.toLocaleString("en-IN")}
-                        </span>
-                      ) : (
-                        <span style={{ color: "var(--ge-success)" }}>₹0</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  ₹{c.outstanding_balance.toLocaleString("en-IN")}
+                </span>
+              )}
+              fabAction={{
+                label: "Add Customer",
+                href: `/app/${businessId}/customers/new`,
+              }}
+              actions={[
+                {
+                  label: "View Profile",
+                  icon: "👤",
+                  onClick: (c) => setSelectedCustomer(c),
+                },
+                {
+                  label: "Open Full Page",
+                  icon: "↗",
+                  onClick: (c) => router.push(`/app/${businessId}/customers/${c.id}`),
+                },
+                {
+                  label: "Call Customer",
+                  icon: "📞",
+                  onClick: (c) => {
+                    if (c.phone) window.location.href = `tel:${c.phone}`;
+                  },
+                },
+              ]}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Slide-in Detail Drawer for Customer */}
+      <DetailPanel
+        isOpen={!!selectedCustomer}
+        onClose={() => setSelectedCustomer(null)}
+        title={selectedCustomer?.name || "Customer Details"}
+        subtitle={selectedCustomer?.email || selectedCustomer?.phone || "Customer record"}
+        statusBadge={{
+          text: (selectedCustomer?.customer_type || "individual").toUpperCase(),
+          variant: "neutral",
+        }}
+        heroNumber={{
+          label: "Outstanding Balance",
+          value: `₹${(selectedCustomer?.outstanding_balance || 0).toLocaleString("en-IN")}`,
+          color: (selectedCustomer?.outstanding_balance || 0) > 0 ? "var(--danger)" : "var(--success)",
+          caption: (selectedCustomer?.outstanding_balance || 0) > 0 ? "Credit pending collection" : "All cleared",
+        }}
+        fullPageHref={selectedCustomer ? `/app/${businessId}/customers/${selectedCustomer.id}` : undefined}
+        actions={[
+          {
+            label: "Create Invoice",
+            variant: "primary",
+            href: `/app/${businessId}/sales/new?customerId=${selectedCustomer?.id}`,
+          },
+          {
+            label: "Full Profile",
+            variant: "secondary",
+            href: `/app/${businessId}/customers/${selectedCustomer?.id}`,
+          },
+        ]}
+      >
+        {selectedCustomer && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                borderRadius: "var(--radius-md)",
+                padding: "16px",
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "14px",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                  Phone
+                </div>
+                <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+                  {selectedCustomer.phone ? (
+                    <a
+                      href={`tel:${selectedCustomer.phone}`}
+                      style={{ color: "var(--primary)", textDecoration: "none" }}
+                    >
+                      {selectedCustomer.phone}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                  GSTIN
+                </div>
+                <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+                  {selectedCustomer.gstin || "Unregistered"}
+                </div>
+              </div>
+
+              <div style={{ gridColumn: "span 2" }}>
+                <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                  Address
+                </div>
+                <div style={{ fontSize: "var(--font-sm)", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                  {selectedCustomer.address || "No address on file."}
+                </div>
+              </div>
+
+              {selectedCustomer.credit_limit ? (
+                <div>
+                  <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                    Credit Limit
+                  </div>
+                  <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+                    ₹{selectedCustomer.credit_limit.toLocaleString("en-IN")}
+                  </div>
+                </div>
+              ) : null}
+
+              {selectedCustomer.payment_terms ? (
+                <div>
+                  <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                    Payment Terms
+                  </div>
+                  <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+                    Net {selectedCustomer.payment_terms} Days
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         )}
-      </div>
+      </DetailPanel>
     </div>
-  );
-}
-
-// Helpers
-const thStyle: React.CSSProperties = {
-  padding: "12px 16px",
-  textAlign: "left",
-  fontWeight: 500,
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "14px 16px",
-  fontSize: "0.875rem",
-  color: "var(--ge-text-secondary)",
-};
-
-function SortHeader({
-  label,
-  col,
-  current,
-  asc,
-  onClick,
-}: {
-  label: string;
-  col: string;
-  current: string;
-  asc: boolean;
-  onClick: (col: any) => void;
-}) {
-  return (
-    <th
-      style={{ ...thStyle, cursor: "pointer", userSelect: "none" }}
-      onClick={() => onClick(col)}
-    >
-      {label} {current === col ? (asc ? "↑" : "↓") : ""}
-    </th>
   );
 }

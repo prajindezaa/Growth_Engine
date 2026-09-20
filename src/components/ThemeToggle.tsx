@@ -24,11 +24,23 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button onClick={toggle} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} style={{
-      background: "transparent", border: "none", cursor: "pointer",
-      padding: "8px", borderRadius: "var(--ge-radius)", fontSize: "1rem",
-      color: "var(--ge-text-muted)", transition: "all var(--ge-transition)",
-    }}>
+    <button
+      onClick={toggle}
+      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      style={{
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: "6px 8px",
+        borderRadius: "var(--radius-sm)",
+        fontSize: "1.1rem",
+        color: "var(--text-muted)",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "color 0.15s ease",
+      }}
+    >
       {theme === "dark" ? "☀️" : "🌙"}
     </button>
   );

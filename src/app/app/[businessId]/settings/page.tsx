@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Business, TaxConfig, PaymentSettings } from "@/lib/types";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
 
 export default function SettingsPage() {
   const params = useParams();
@@ -202,41 +204,46 @@ export default function SettingsPage() {
   const isOwner = role === "owner";
 
   return (
-    <div style={{ padding: "40px", maxWidth: "640px" }}>
-      <div className="ge-animate-in">
-        <h1
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: 700,
-            color: "var(--ge-text-primary)",
-            letterSpacing: "-0.02em",
-            marginBottom: "4px",
-          }}
-        >
-          Business Settings
-        </h1>
-        <p
-          style={{
-            fontSize: "0.875rem",
-            color: "var(--ge-text-secondary)",
-            marginBottom: "32px",
-          }}
-        >
-          {isOwner
-            ? "Manage your business details and preferences."
-            : "View-only — only the owner can edit settings."}
-        </p>
+    <div className="ge-page-container" style={{ maxWidth: "720px" }}>
+      <PageHeader
+        title="Business Settings"
+        subtitle={
+          isOwner
+            ? "Manage your business profile, invoicing preferences, and tax setup"
+            : "View-only — only the business owner can edit settings"
+        }
+      />
 
-        {error && (
-          <div className="ge-error" style={{ marginBottom: "20px" }}>
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="ge-success" style={{ marginBottom: "20px" }}>
-            {success}
-          </div>
-        )}
+      {error && (
+        <div
+          style={{
+            padding: "12px 16px",
+            backgroundColor: "var(--danger-bg)",
+            color: "var(--danger)",
+            border: "1px solid rgba(239, 68, 68, 0.2)",
+            borderRadius: "var(--radius-sm)",
+            fontSize: "var(--font-sm)",
+            marginBottom: "var(--space-2)",
+          }}
+        >
+          {error}
+        </div>
+      )}
+      {success && (
+        <div
+          style={{
+            padding: "12px 16px",
+            backgroundColor: "var(--success-bg)",
+            color: "var(--success)",
+            border: "1px solid rgba(22, 163, 74, 0.2)",
+            borderRadius: "var(--radius-sm)",
+            fontSize: "var(--font-sm)",
+            marginBottom: "var(--space-2)",
+          }}
+        >
+          {success}
+        </div>
+      )}
 
         {/* Logo section */}
         <Section title="Logo">
@@ -634,7 +641,6 @@ export default function SettingsPage() {
             </button>
           </div>
         )}
-      </div>
     </div>
   );
 }
@@ -649,15 +655,15 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: "32px" }}>
+    <div className="ge-card" style={{ marginBottom: "var(--space-3)", padding: "var(--space-3)" }}>
       <h2
         style={{
-          fontSize: "1rem",
+          fontSize: "var(--font-base)",
           fontWeight: 600,
-          color: "var(--ge-text-primary)",
-          marginBottom: "16px",
-          paddingBottom: "8px",
-          borderBottom: "1px solid var(--ge-border)",
+          color: "var(--text-primary)",
+          marginBottom: "var(--space-2)",
+          paddingBottom: "var(--space-1)",
+          borderBottom: "1px solid var(--border-subtle)",
         }}
       >
         {title}
@@ -673,7 +679,7 @@ function FieldGroup({ children }: { children: React.ReactNode }) {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "16px",
+        gap: "var(--space-2)",
       }}
     >
       {children}
@@ -692,10 +698,20 @@ function Field({
 }) {
   return (
     <div>
-      <label className="ge-label">
+      <label
+        style={{
+          display: "block",
+          fontSize: "var(--font-xs)",
+          fontWeight: 600,
+          color: "var(--text-secondary)",
+          marginBottom: "6px",
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+        }}
+      >
         {label}
         {required && (
-          <span style={{ color: "var(--ge-error)", marginLeft: "2px" }}>*</span>
+          <span style={{ color: "var(--danger)", marginLeft: "2px" }}>*</span>
         )}
       </label>
       {children}

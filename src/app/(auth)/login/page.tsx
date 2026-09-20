@@ -25,13 +25,13 @@ export default function LoginPage() {
 
   return (
     <>
-      <div style={{ marginBottom: "28px" }}>
+      <div style={{ marginBottom: "var(--space-3)" }}>
         <h1
           style={{
-            fontSize: "1.5rem",
+            fontSize: "var(--font-lg)",
             fontWeight: 700,
-            color: "var(--ge-text-primary)",
-            marginBottom: "6px",
+            color: "var(--text-primary)",
+            marginBottom: "4px",
             letterSpacing: "-0.02em",
           }}
         >
@@ -39,8 +39,9 @@ export default function LoginPage() {
         </h1>
         <p
           style={{
-            fontSize: "0.875rem",
-            color: "var(--ge-text-secondary)",
+            fontSize: "var(--font-sm)",
+            color: "var(--text-muted)",
+            margin: 0,
           }}
         >
           Sign in to your GrowthEngine account
@@ -48,14 +49,33 @@ export default function LoginPage() {
       </div>
 
       {error && (
-        <div className="ge-error" style={{ marginBottom: "20px" }}>
+        <div
+          style={{
+            backgroundColor: "var(--danger-bg)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            color: "var(--danger)",
+            padding: "10px 14px",
+            borderRadius: "var(--radius-sm)",
+            fontSize: "var(--font-sm)",
+            marginBottom: "var(--space-2)",
+          }}
+        >
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: "18px" }}>
-          <label htmlFor="login-email" className="ge-label">
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+        <div>
+          <label
+            htmlFor="login-email"
+            style={{
+              display: "block",
+              fontSize: "var(--font-xs)",
+              fontWeight: 500,
+              color: "var(--text-secondary)",
+              marginBottom: "6px",
+            }}
+          >
             Email
           </label>
           <input
@@ -69,8 +89,17 @@ export default function LoginPage() {
           />
         </div>
 
-        <div style={{ marginBottom: "10px" }}>
-          <label htmlFor="login-password" className="ge-label">
+        <div>
+          <label
+            htmlFor="login-password"
+            style={{
+              display: "block",
+              fontSize: "var(--font-xs)",
+              fontWeight: 500,
+              color: "var(--text-secondary)",
+              marginBottom: "6px",
+            }}
+          >
             Password
           </label>
           <input
@@ -84,17 +113,15 @@ export default function LoginPage() {
           />
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginBottom: "24px",
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "-4px" }}>
           <Link
             href="/forgot-password"
-            className="ge-link"
-            style={{ fontSize: "0.8125rem" }}
+            style={{
+              fontSize: "var(--font-xs)",
+              color: "var(--primary)",
+              textDecoration: "none",
+              fontWeight: 500,
+            }}
           >
             Forgot password?
           </Link>
@@ -103,39 +130,45 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="ge-btn-primary"
+          style={{
+            width: "100%",
+            padding: "10px 16px",
+            backgroundColor: "var(--primary)",
+            color: "#FFFFFF",
+            border: "none",
+            borderRadius: "var(--radius-sm)",
+            fontSize: "var(--font-sm)",
+            fontWeight: 600,
+            cursor: loading ? "not-allowed" : "pointer",
+            boxShadow: "var(--shadow-sm)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            marginTop: "8px",
+          }}
         >
-          <span>
-            {loading ? (
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                }}
-              >
-                <span className="ge-spinner" />
-                Signing in…
-              </span>
-            ) : (
-              "Sign in"
-            )}
-          </span>
+          {loading ? "Signing in…" : "Sign In"}
         </button>
       </form>
 
-      <div className="ge-divider" />
-
       <p
         style={{
+          marginTop: "var(--space-3)",
           textAlign: "center",
-          fontSize: "0.875rem",
-          color: "var(--ge-text-secondary)",
+          fontSize: "var(--font-sm)",
+          color: "var(--text-muted)",
         }}
       >
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="ge-link">
+        <Link
+          href="/signup"
+          style={{
+            color: "var(--primary)",
+            textDecoration: "none",
+            fontWeight: 600,
+          }}
+        >
           Sign up
         </Link>
       </p>

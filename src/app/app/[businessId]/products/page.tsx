@@ -5,6 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Product } from "@/lib/types";
 import Link from "next/link";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { DataTable, Column } from "@/components/ui/DataTable";
+import { DetailPanel } from "@/components/ui/DetailPanel";
+import { MobileCardList } from "@/components/ui/MobileCardList";
 
 export default function ProductsPage() {
   const params = useParams();
@@ -16,10 +23,11 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("");
   const [showLowStock, setShowLowStock] = useState(false);
-  const [sortBy, setSortBy] = useState<"name" | "selling_price" | "current_stock">("name");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  useEffect(() => { loadProducts(); }, [businessId]);
+  useEffect(() => {
+    loadProducts();
+  }, [businessId]);
 
   async function loadProducts() {
     const supabase = createClient();
@@ -32,150 +40,367 @@ export default function ProductsPage() {
     setLoading(false);
   }
 
-  function handleSort(col: typeof sortBy) {
-    if (sortBy === col) setSortAsc(!sortAsc);
-    else { setSortBy(col); setSortAsc(true); }
-  }
-
-  // Unique categories
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))] as string[];
 
-  const filtered = products
-    .filter((p) => {
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        if (!p.name.toLowerCase().includes(q) && !(p.sku || "").toLowerCase().includes(q) && !(p.barcode || "").toLowerCase().includes(q)) return false;
-      }
-      if (catFilter && p.category !== catFilter) return false;
-      if (showLowStock && p.current_stock > p.min_stock) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      let cmp = 0;
-      if (sortBy === "name") cmp = a.name.localeCompare(b.name);
-      else if (sortBy === "selling_price") cmp = a.selling_price - b.selling_price;
-      else cmp = a.current_stock - b.current_stock;
-      return sortAsc ? cmp : -cmp;
-    });
+  const filtered = products.filter((p) => {
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      if (
+        !p.name.toLowerCase().includes(q) &&
+        !(p.sku || "").toLowerCase().includes(q) &&
+        !(p.barcode || "").toLowerCase().includes(q)
+      )
+        return false;
+    }
+    if (catFilter && p.category !== catFilter) return false;
+    if (showLowStock && p.current_stock > p.min_stock) return false;
+    return true;
+  });
 
   const lowStockCount = products.filter((p) => p.current_stock <= p.min_stock && p.is_active).length;
 
-  if (loading) return <div style={{ padding: "60px 40px", display: "flex", justifyContent: "center" }}><span className="ge-spinner" /></div>;
-
-  return (
-    <div style={{ padding: "40px" }}>
-      <div className="ge-animate-in">
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-          <div>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--ge-text-primary)", letterSpacing: "-0.02em", marginBottom: "4px" }}>Products</h1>
-            <p style={{ fontSize: "0.875rem", color: "var(--ge-text-secondary)" }}>
-              {products.length} product{products.length !== 1 ? "s" : ""}
-              {lowStockCount > 0 && <span style={{ color: "var(--ge-error)", marginLeft: "8px" }}>• {lowStockCount} low stock</span>}
-            </p>
-          </div>
-          <Link href={`/app/${businessId}/products/new`} className="ge-btn-primary" style={{ width: "auto", padding: "10px 20px", fontSize: "0.875rem", textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-            <span>+ Add product</span>
-          </Link>
-        </div>
-
-        {/* Filters */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, SKU, or barcode…" className="ge-input" style={{ maxWidth: "300px", flex: 1 }} />
-          {categories.length > 0 && (
-            <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="ge-input" style={{ maxWidth: "180px" }}>
-              <option value="">All categories</option>
-              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+  const columns: Column<Product>[] = [
+    {
+      header: "Product Name",
+      accessor: (p) => (
+        <div>
+          <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.name}</div>
+          {p.sku && (
+            <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", fontFamily: "monospace" }}>
+              SKU: {p.sku}
+            </div>
           )}
-          <button
-            type="button"
-            onClick={() => setShowLowStock(!showLowStock)}
+        </div>
+      ),
+    },
+    {
+      header: "Category",
+      accessor: (p) => (
+        <span className="ge-badge ge-badge-neutral">{p.category || "General"}</span>
+      ),
+    },
+    {
+      header: "Selling Price",
+      accessor: (p) => (
+        <span style={{ fontFamily: "monospace", fontWeight: 600, color: "var(--text-primary)" }}>
+          ₹{p.selling_price.toLocaleString("en-IN")}
+        </span>
+      ),
+    },
+    {
+      header: "Cost Price",
+      accessor: (p) => (
+        <span style={{ fontFamily: "monospace", color: "var(--text-secondary)" }}>
+          ₹{p.purchase_price.toLocaleString("en-IN")}
+        </span>
+      ),
+    },
+    {
+      header: "Stock Level",
+      align: "right",
+      accessor: (p) => {
+        const isLow = p.current_stock <= p.min_stock;
+        return (
+          <span
             style={{
-              padding: "8px 14px",
-              borderRadius: "var(--ge-radius-full)",
-              border: showLowStock ? "1px solid var(--ge-error)" : "1px solid var(--ge-border)",
-              background: showLowStock ? "var(--ge-error-bg)" : "transparent",
-              color: showLowStock ? "var(--ge-error)" : "var(--ge-text-secondary)",
-              fontSize: "0.8125rem",
-              fontWeight: 500,
-              cursor: "pointer",
-              transition: "all var(--ge-transition)",
+              fontFamily: "monospace",
+              fontWeight: 700,
+              fontSize: "var(--font-sm)",
+              color: isLow ? "var(--danger)" : "var(--success)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
             }}
           >
-            ⚠ Low stock{showLowStock ? " ✕" : ""}
-          </button>
-        </div>
+            {isLow && <span>⚠</span>}
+            {p.current_stock} {p.unit}
+          </span>
+        );
+      },
+    },
+  ];
 
-        {/* Table */}
-        {filtered.length === 0 ? (
-          <div style={{ background: "var(--ge-bg-card)", border: "1px solid var(--ge-border)", borderRadius: "var(--ge-radius-lg)", padding: "48px", textAlign: "center", backdropFilter: "blur(20px)" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "12px" }}>📦</div>
-            <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--ge-text-primary)", marginBottom: "8px" }}>{search || catFilter || showLowStock ? "No products found" : "No products yet"}</h2>
-            <p style={{ fontSize: "0.875rem", color: "var(--ge-text-secondary)", marginBottom: "20px" }}>{search || catFilter || showLowStock ? "Try adjusting your filters." : "Add your first product to get started."}</p>
-            {!(search || catFilter || showLowStock) && <Link href={`/app/${businessId}/products/new`} className="ge-btn-primary" style={{ width: "auto", padding: "10px 24px", display: "inline-flex", textDecoration: "none" }}><span>+ Add product</span></Link>}
+  return (
+    <div className="ge-page-container">
+      {/* Desktop Header */}
+      <div className="ge-desktop-only">
+        <PageHeader
+          title="Products"
+          description={`${products.length} catalog SKU${products.length !== 1 ? "s" : ""}`}
+          action={
+            <Link href={`/app/${businessId}/products/new`} style={{ textDecoration: "none" }}>
+              <Button variant="primary" icon="＋">Add Product</Button>
+            </Link>
+          }
+        />
+      </div>
+
+      {/* State Rendering */}
+      {loading ? (
+        <TableSkeleton rows={6} />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon="📦"
+          title={search ? "No products match criteria" : "No products in inventory"}
+          description={
+            search
+              ? "Try adjusting your search terms or clearing active category filters."
+              : "Create product listings to start making sales, tracking stock, and invoicing customers."
+          }
+          actionLabel={search ? undefined : "Add First Product"}
+          actionHref={search ? undefined : `/app/${businessId}/products/new`}
+        />
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="ge-desktop-only">
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--space-2)",
+                marginBottom: "var(--space-3)",
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name, SKU, or barcode…"
+                className="ge-input"
+                style={{ maxWidth: "340px" }}
+              />
+
+              {categories.length > 0 && (
+                <select
+                  value={catFilter}
+                  onChange={(e) => setCatFilter(e.target.value)}
+                  className="ge-input"
+                  style={{ maxWidth: "200px" }}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              )}
+
+              {lowStockCount > 0 && (
+                <Button
+                  variant={showLowStock ? "destructive" : "secondary"}
+                  size="sm"
+                  onClick={() => setShowLowStock(!showLowStock)}
+                >
+                  ⚠ Low Stock ({lowStockCount})
+                </Button>
+              )}
+            </div>
+
+            <DataTable
+              columns={columns}
+              data={filtered}
+              keyExtractor={(p) => p.id}
+              onRowClick={(p) => setSelectedProduct(p)}
+            />
           </div>
-        ) : (
-          <div style={{ background: "var(--ge-bg-card)", border: "1px solid var(--ge-border)", borderRadius: "var(--ge-radius-lg)", overflow: "hidden", backdropFilter: "blur(20px)" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--ge-border)", fontSize: "0.75rem", color: "var(--ge-text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                  <SortTh label="Product" col="name" current={sortBy} asc={sortAsc} onClick={handleSort} />
-                  <th style={thStyle}>SKU</th>
-                  <th style={thStyle}>Category</th>
-                  <SortTh label="Price" col="selling_price" current={sortBy} asc={sortAsc} onClick={handleSort} />
-                  <SortTh label="Stock" col="current_stock" current={sortBy} asc={sortAsc} onClick={handleSort} />
-                  <th style={thStyle}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p) => {
-                  const isLow = p.current_stock <= p.min_stock && p.is_active;
-                  return (
-                    <tr key={p.id} onClick={() => router.push(`/app/${businessId}/products/${p.id}`)} style={{ borderBottom: "1px solid var(--ge-border)", cursor: "pointer", transition: "background var(--ge-transition)" }} className="ge-table-row">
-                      <td style={tdStyle}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          {p.image_url ? (
-                            <img src={p.image_url} alt="" style={{ width: "32px", height: "32px", borderRadius: "var(--ge-radius)", objectFit: "cover" }} />
-                          ) : (
-                            <div style={{ width: "32px", height: "32px", borderRadius: "var(--ge-radius)", background: "var(--ge-gradient-subtle)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem" }}>📦</div>
-                          )}
-                          <span style={{ fontWeight: 500, color: "var(--ge-text-primary)" }}>{p.name}</span>
-                        </div>
-                      </td>
-                      <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "0.8125rem" }}>{p.sku || "—"}</td>
-                      <td style={tdStyle}>{p.category || "—"}</td>
-                      <td style={{ ...tdStyle, fontFamily: "monospace", fontWeight: 500 }}>₹{p.selling_price.toLocaleString("en-IN")}</td>
-                      <td style={tdStyle}>
-                        <span style={{ fontFamily: "monospace", fontWeight: 500, color: isLow ? "var(--ge-error)" : "var(--ge-text-primary)" }}>
-                          {p.current_stock} {p.unit}
-                        </span>
-                        {isLow && <span style={{ marginLeft: "6px", fontSize: "0.6875rem", color: "var(--ge-error)" }}>⚠ LOW</span>}
-                      </td>
-                      <td style={tdStyle}>
-                        <span style={{
-                          padding: "2px 8px", borderRadius: "var(--ge-radius-full)", fontSize: "0.6875rem", fontWeight: 600,
-                          background: p.is_active ? "var(--ge-success-bg)" : "rgba(107,114,128,0.12)",
-                          color: p.is_active ? "var(--ge-success)" : "#9ca3af",
-                        }}>
-                          {p.is_active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+
+          {/* Mobile Card List View (Thumb Optimized, Reachable) */}
+          <div className="ge-mobile-only">
+            <div style={{ padding: "12px 0 6px 0" }}>
+              <h1 style={{ fontSize: "1.35rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
+                Products
+              </h1>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "2px 0 8px 0" }}>
+                {filtered.length} product{filtered.length !== 1 ? "s" : ""} • {lowStockCount > 0 ? `⚠ ${lowStockCount} low stock` : "Stock healthy"}
+              </p>
+            </div>
+
+            {/* Mobile Category Horizontal Scroll */}
+            {categories.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: "6px",
+                  overflowX: "auto",
+                  paddingBottom: "10px",
+                  marginBottom: "4px",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setCatFilter("")}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "var(--radius-full)",
+                    border: "none",
+                    background: catFilter === "" ? "var(--primary)" : "var(--bg-card)",
+                    color: catFilter === "" ? "#fff" : "var(--text-secondary)",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    cursor: "pointer",
+                  }}
+                >
+                  All
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCatFilter(catFilter === cat ? "" : cat)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "var(--radius-full)",
+                      border: "none",
+                      background: catFilter === cat ? "var(--primary)" : "var(--bg-card)",
+                      color: catFilter === cat ? "#fff" : "var(--text-secondary)",
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <MobileCardList
+              items={filtered}
+              keyExtractor={(p) => p.id}
+              searchPlaceholder="Search products or SKU..."
+              onSearchChange={(q) => setSearch(q)}
+              onItemClick={(p) => setSelectedProduct(p)}
+              renderPrimary={(p) => p.name}
+              renderSecondary={(p) => (
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                  <span>{p.category || "General"}</span>
+                  {p.sku && <span>• SKU: {p.sku}</span>}
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      color: p.current_stock <= p.min_stock ? "var(--danger)" : "var(--text-secondary)",
+                    }}
+                  >
+                    • {p.current_stock} {p.unit} left
+                  </span>
+                </div>
+              )}
+              renderMetric={(p) => (
+                <span style={{ color: "var(--text-primary)" }}>
+                  ₹{p.selling_price.toLocaleString("en-IN")}
+                </span>
+              )}
+              fabAction={{
+                label: "Add Product",
+                href: `/app/${businessId}/products/new`,
+              }}
+              actions={[
+                {
+                  label: "View Stock Details",
+                  icon: "🏷️",
+                  onClick: (p) => setSelectedProduct(p),
+                },
+                {
+                  label: "Open Full Page",
+                  icon: "↗",
+                  onClick: (p) => router.push(`/app/${businessId}/products/${p.id}`),
+                },
+              ]}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Slide-in Detail Drawer for Product */}
+      <DetailPanel
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        title={selectedProduct?.name || "Product Details"}
+        subtitle={selectedProduct?.sku ? `SKU: ${selectedProduct.sku}` : (selectedProduct?.category || "Product")}
+        statusBadge={{
+          text: (selectedProduct?.current_stock || 0) <= (selectedProduct?.min_stock || 0) ? "LOW STOCK" : "IN STOCK",
+          variant: (selectedProduct?.current_stock || 0) <= (selectedProduct?.min_stock || 0) ? "danger" : "success",
+        }}
+        heroNumber={{
+          label: "Selling Price",
+          value: `₹${(selectedProduct?.selling_price || 0).toLocaleString("en-IN")}`,
+          color: "var(--primary)",
+          caption: `Current Stock: ${selectedProduct?.current_stock || 0} ${selectedProduct?.unit || "units"}`,
+        }}
+        fullPageHref={selectedProduct ? `/app/${businessId}/products/${selectedProduct.id}` : undefined}
+        actions={[
+          {
+            label: "Edit Product",
+            variant: "primary",
+            href: `/app/${businessId}/products/${selectedProduct?.id}`,
+          },
+        ]}
+      >
+        {selectedProduct && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                borderRadius: "var(--radius-md)",
+                padding: "16px",
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "14px",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                  Cost / Purchase Price
+                </div>
+                <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+                  ₹{(selectedProduct.purchase_price || 0).toLocaleString("en-IN")}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                  GST / Tax Rate
+                </div>
+                <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+                  {selectedProduct.tax_rate !== undefined ? `${selectedProduct.tax_rate}%` : "Default"}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                  Barcode
+                </div>
+                <div style={{ fontSize: "var(--font-sm)", fontFamily: "monospace", color: "var(--text-secondary)" }}>
+                  {selectedProduct.barcode || "—"}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                  Minimum Stock Alert
+                </div>
+                <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+                  {selectedProduct.min_stock} {selectedProduct.unit}
+                </div>
+              </div>
+
+              {selectedProduct.hsn_sac && (
+                <div style={{ gridColumn: "span 2" }}>
+                  <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                    HSN / SAC Code
+                  </div>
+                  <div style={{ fontSize: "var(--font-sm)", fontFamily: "monospace", color: "var(--text-secondary)" }}>
+                    {selectedProduct.hsn_sac}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
-      </div>
+      </DetailPanel>
     </div>
   );
-}
-
-const thStyle: React.CSSProperties = { padding: "12px 16px", textAlign: "left", fontWeight: 500 };
-const tdStyle: React.CSSProperties = { padding: "14px 16px", fontSize: "0.875rem", color: "var(--ge-text-secondary)" };
-
-function SortTh({ label, col, current, asc, onClick }: { label: string; col: string; current: string; asc: boolean; onClick: (c: any) => void }) {
-  return <th style={{ ...thStyle, cursor: "pointer", userSelect: "none" }} onClick={() => onClick(col)}>{label} {current === col ? (asc ? "↑" : "↓") : ""}</th>;
 }

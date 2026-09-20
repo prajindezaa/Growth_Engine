@@ -181,7 +181,7 @@ export default function InvitePage() {
     );
   }
 
-  const roleColor = ROLE_COLORS[invite.role as Role] || ROLE_COLORS.viewer;
+  const roleColor = ROLE_COLORS[invite.role as Role] || ROLE_COLORS.sales;
 
   return (
     <div

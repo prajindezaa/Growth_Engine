@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { pushNotifications } from "@/lib/capacitor/pushNotifications";
 import Link from "next/link";
 
 interface Notification {
@@ -31,14 +32,30 @@ export default function NotificationCenter({ businessId }: { businessId: string 
   const [unreadCount, setUnreadCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { loadNotifications(); }, []);
+  useEffect(() => {
+    loadNotifications();
+
+    // Register Capacitor push notifications if running on native mobile
+    pushNotifications.init((push) => {
+      // Refresh notifications when native alert arrives
+      loadNotifications();
+    });
+  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) setIsOpen(false);
     }
+    const handleOpenEvent = () => {
+      setIsOpen(true);
+      loadNotifications();
+    };
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    window.addEventListener("open-notifications-panel", handleOpenEvent);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("open-notifications-panel", handleOpenEvent);
+    };
   }, []);
 
   async function loadNotifications() {
@@ -78,43 +95,116 @@ export default function NotificationCenter({ businessId }: { businessId: string 
   return (
     <div ref={panelRef} style={{ position: "relative" }}>
       {/* Bell button */}
-      <button onClick={() => { setIsOpen(!isOpen); if (!isOpen) loadNotifications(); }} style={{
-        background: "transparent", border: "none", cursor: "pointer", position: "relative",
-        padding: "8px", borderRadius: "var(--ge-radius)", fontSize: "1.125rem",
-      }}>
+      <button
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (!isOpen) loadNotifications();
+        }}
+        style={{
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          position: "relative",
+          padding: "6px 8px",
+          borderRadius: "var(--radius-sm)",
+          fontSize: "1.15rem",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         🔔
         {unreadCount > 0 && (
-          <span style={{
-            position: "absolute", top: "2px", right: "2px", width: "18px", height: "18px",
-            borderRadius: "50%", background: "var(--ge-error)", color: "#fff",
-            fontSize: "0.625rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center",
-          }}>{unreadCount > 9 ? "9+" : unreadCount}</span>
+          <span
+            style={{
+              position: "absolute",
+              top: "0px",
+              right: "0px",
+              width: "18px",
+              height: "18px",
+              borderRadius: "50%",
+              background: "var(--danger)",
+              color: "#fff",
+              fontSize: "10px",
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
         )}
       </button>
 
       {/* Dropdown panel */}
       {isOpen && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 8px)", right: 0, width: "360px",
-          background: "var(--ge-bg-card)", border: "1px solid var(--ge-border)",
-          borderRadius: "var(--ge-radius-lg)", boxShadow: "0 16px 64px rgba(0,0,0,0.5)",
-          backdropFilter: "blur(24px)", overflow: "hidden", zIndex: 100,
-        }} className="ge-animate-in">
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            right: 0,
+            width: "360px",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "var(--radius-md)",
+            boxShadow: "var(--shadow-lg)",
+            overflow: "hidden",
+            zIndex: 100,
+          }}
+          className="ge-animate-in"
+        >
           {/* Header */}
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--ge-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h4 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 600, color: "var(--ge-text-primary)" }}>Notifications</h4>
+          <div
+            style={{
+              padding: "12px var(--space-2)",
+              borderBottom: "1px solid var(--border-subtle)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <h4
+              style={{
+                margin: 0,
+                fontSize: "var(--font-sm)",
+                fontWeight: 600,
+                color: "var(--text-primary)",
+              }}
+            >
+              Notifications
+            </h4>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={generateNotifications} style={{
-                fontSize: "0.6875rem", padding: "4px 8px", borderRadius: "var(--ge-radius)",
-                border: "1px solid var(--ge-border)", background: "transparent",
-                color: "var(--ge-text-muted)", cursor: "pointer",
-              }}>↻ Refresh</button>
+              <button
+                onClick={generateNotifications}
+                style={{
+                  fontSize: "var(--font-xs)",
+                  padding: "4px 8px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--border-subtle)",
+                  background: "transparent",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                }}
+              >
+                ↻ Refresh
+              </button>
               {unreadCount > 0 && (
-                <button onClick={markAllRead} style={{
-                  fontSize: "0.6875rem", padding: "4px 8px", borderRadius: "var(--ge-radius)",
-                  border: "1px solid var(--ge-border)", background: "transparent",
-                  color: "var(--ge-accent)", cursor: "pointer",
-                }}>Mark all read</button>
+                <button
+                  onClick={markAllRead}
+                  style={{
+                    fontSize: "var(--font-xs)",
+                    padding: "4px 8px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--border-subtle)",
+                    background: "transparent",
+                    color: "var(--primary)",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                  }}
+                >
+                  Mark all read
+                </button>
               )}
             </div>
           </div>
@@ -122,35 +212,86 @@ export default function NotificationCenter({ businessId }: { businessId: string 
           {/* List */}
           <div style={{ maxHeight: "400px", overflowY: "auto" }}>
             {notifications.length === 0 ? (
-              <div style={{ padding: "32px 16px", textAlign: "center", color: "var(--ge-text-muted)", fontSize: "0.8125rem" }}>
+              <div
+                style={{
+                  padding: "var(--space-4) var(--space-2)",
+                  textAlign: "center",
+                  color: "var(--text-muted)",
+                  fontSize: "var(--font-sm)",
+                }}
+              >
                 No notifications yet. Click Refresh to generate alerts.
               </div>
             ) : (
               notifications.map((n) => {
                 const link = getLink(n);
                 const itemStyle = {
-                  display: "flex" as const, gap: "10px", padding: "10px 16px",
-                  borderBottom: "1px solid var(--ge-border)", textDecoration: "none",
-                  background: n.is_read ? "transparent" : "rgba(13,148,136,0.04)",
-                  cursor: link ? "pointer" as const : "default" as const,
+                  display: "flex" as const,
+                  gap: "10px",
+                  padding: "12px var(--space-2)",
+                  borderBottom: "1px solid var(--border-subtle)",
+                  textDecoration: "none",
+                  background: n.is_read ? "transparent" : "var(--primary-soft)",
+                  cursor: link ? ("pointer" as const) : ("default" as const),
                 };
                 const inner = (
                   <>
-                    <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: "2px" }}>{TYPE_ICONS[n.type] || "🔔"}</span>
+                    <span style={{ fontSize: "1.1rem", flexShrink: 0, marginTop: "2px" }}>
+                      {TYPE_ICONS[n.type] || "🔔"}
+                    </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "0.8125rem", fontWeight: n.is_read ? 400 : 600, color: "var(--ge-text-primary)", marginBottom: "2px" }}>{n.title}</div>
-                      {n.body && <div style={{ fontSize: "0.75rem", color: "var(--ge-text-muted)" }}>{n.body}</div>}
-                      <div style={{ fontSize: "0.625rem", color: "var(--ge-text-muted)", marginTop: "2px" }}>
-                        {new Date(n.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      <div
+                        style={{
+                          fontSize: "var(--font-sm)",
+                          fontWeight: n.is_read ? 400 : 600,
+                          color: "var(--text-primary)",
+                          marginBottom: "2px",
+                        }}
+                      >
+                        {n.title}
+                      </div>
+                      {n.body && (
+                        <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)" }}>
+                          {n.body}
+                        </div>
+                      )}
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: "var(--text-muted)",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {new Date(n.created_at).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </div>
                     </div>
-                    {!n.is_read && <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--ge-accent)", flexShrink: 0, marginTop: "6px" }} />}
+                    {!n.is_read && (
+                      <div
+                        style={{
+                          width: "6px",
+                          height: "6px",
+                          borderRadius: "50%",
+                          background: "var(--primary)",
+                          flexShrink: 0,
+                          marginTop: "6px",
+                        }}
+                      />
+                    )}
                   </>
                 );
                 return link ? (
-                  <Link key={n.id} href={link} style={itemStyle}>{inner}</Link>
+                  <Link key={n.id} href={link} style={itemStyle}>
+                    {inner}
+                  </Link>
                 ) : (
-                  <div key={n.id} style={itemStyle}>{inner}</div>
+                  <div key={n.id} style={itemStyle}>
+                    {inner}
+                  </div>
                 );
               })
             )}

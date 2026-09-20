@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Invoice, LineItem, Payment } from "@/lib/types";
 import { DocumentTemplate, useDocumentPDF, ShareActions } from "@/components/DocumentTemplate";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
+import { Button } from "@/components/ui/Button";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   draft: { bg: "rgba(107,114,128,0.12)", text: "#9ca3af" },
@@ -36,6 +38,7 @@ export default function InvoiceDetailPage() {
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Payment form
   const [showPayForm, setShowPayForm] = useState(false);
@@ -70,8 +73,8 @@ export default function InvoiceDetailPage() {
     await loadData();
   }
 
-  async function handleCancel() {
-    if (!confirm("Cancel this invoice? Stock movements will be reversed.")) return;
+  async function executeCancel() {
+    setShowCancelDialog(false);
     setCancelling(true); setError(null); setSuccess(null);
     const supabase = createClient();
     const { error: err } = await supabase.rpc("cancel_invoice", { p_invoice_id: invoiceId });
@@ -154,12 +157,29 @@ export default function InvoiceDetailPage() {
               </button>
             )}
             {canCancel && (
-              <button onClick={handleCancel} disabled={cancelling} style={{ width: "auto", padding: "10px 16px", fontSize: "0.8125rem", background: "rgba(239,68,68,0.1)", color: "var(--ge-error)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "var(--ge-radius)", cursor: "pointer", fontWeight: 600 }}>
-                {cancelling ? "…" : "✕ Cancel"}
-              </button>
+              <Button
+                variant="destructive"
+                size="sm"
+                loading={cancelling}
+                onClick={() => setShowCancelDialog(true)}
+              >
+                Cancel Invoice
+              </Button>
             )}
           </div>
         </div>
+
+        {/* Invoice Cancellation Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={showCancelDialog}
+          title="Cancel Tax Invoice"
+          message={`Are you sure you want to cancel invoice ${invoice.invoice_number}? All stock movements previously deducted will be restored to inventory immediately.`}
+          confirmLabel="Yes, Cancel Invoice"
+          isDestructive={true}
+          loading={cancelling}
+          onConfirm={executeCancel}
+          onCancel={() => setShowCancelDialog(false)}
+        />
 
         {error && <div className="ge-error" style={{ marginBottom: "20px" }}>{error}</div>}
         {success && <div className="ge-success" style={{ marginBottom: "20px" }}>{success}</div>}

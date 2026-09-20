@@ -7,9 +7,12 @@ import {
   ASSIGNABLE_ROLES,
   ROLE_LABELS,
   ROLE_COLORS,
+  ROLE_DESCRIPTIONS,
   canManageTeam,
   type Role,
 } from "@/lib/roles";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
+import { Button } from "@/components/ui/Button";
 
 interface MemberRow {
   id: string;
@@ -41,10 +44,11 @@ export default function TeamPage() {
   // Invite form
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<Role>("staff");
+  const [inviteRole, setInviteRole] = useState<Role>("sales");
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string; role: Role } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -148,19 +152,22 @@ export default function TeamPage() {
     loadData();
   }
 
-  async function handleRemoveMember(memberId: string, memberRole: Role) {
+  async function executeRemoveMember() {
+    if (!memberToRemove) return;
+    const { id: memberId, role: memberRole } = memberToRemove;
+
     if (memberRole === "owner") {
       const ownerCount = members.filter((m) => m.role === "owner").length;
       if (ownerCount <= 1) {
         setError("Cannot remove the last owner.");
+        setMemberToRemove(null);
         return;
       }
     }
 
-    if (!confirm("Remove this team member?")) return;
-
     const supabase = createClient();
     await supabase.from("business_members").delete().eq("id", memberId);
+    setMemberToRemove(null);
     loadData();
   }
 
@@ -248,7 +255,7 @@ export default function TeamPage() {
                   className="ge-input"
                 />
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1.2 }}>
                 <label className="ge-label">Role</label>
                 <select
                   value={inviteRole}
@@ -271,6 +278,16 @@ export default function TeamPage() {
               >
                 <span>{inviting ? "Sending…" : "Send invite"}</span>
               </button>
+            </div>
+            <div
+              style={{
+                marginTop: "8px",
+                fontSize: "0.75rem",
+                color: "var(--ge-text-muted)",
+                lineHeight: "1.4",
+              }}
+            >
+              ℹ️ <strong>{ROLE_LABELS[inviteRole]}:</strong> {ROLE_DESCRIPTIONS[inviteRole]}
             </div>
           </div>
         )}
@@ -313,7 +330,7 @@ export default function TeamPage() {
                   .join("")
                   .toUpperCase()
                   .slice(0, 2);
-                const roleColor = ROLE_COLORS[member.role as Role] || ROLE_COLORS.viewer;
+                const roleColor = ROLE_COLORS[member.role as Role] || ROLE_COLORS.sales;
 
                 return (
                   <tr
@@ -401,21 +418,19 @@ export default function TeamPage() {
                     {isAdmin && (
                       <td style={{ padding: "14px 16px", textAlign: "right" }}>
                         {member.role !== "owner" && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveMember(member.id, member.role as Role)}
-                            style={{
-                              padding: "4px 10px",
-                              fontSize: "0.75rem",
-                              color: "var(--ge-error)",
-                              background: "transparent",
-                              border: "1px solid rgba(248,113,113,0.2)",
-                              borderRadius: "var(--ge-radius)",
-                              cursor: "pointer",
-                            }}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() =>
+                              setMemberToRemove({
+                                id: member.id,
+                                name,
+                                role: member.role as Role,
+                              })
+                            }
                           >
                             Remove
-                          </button>
+                          </Button>
                         )}
                       </td>
                     )}
@@ -425,6 +440,17 @@ export default function TeamPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Reusable Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={!!memberToRemove}
+          title="Remove Team Member"
+          message={`Are you sure you want to remove ${memberToRemove?.name || "this user"} from the team? They will immediately lose access to this business workspace.`}
+          confirmLabel="Remove Member"
+          isDestructive={true}
+          onConfirm={executeRemoveMember}
+          onCancel={() => setMemberToRemove(null)}
+        />
 
         {/* Pending invites */}
         {invites.length > 0 && (

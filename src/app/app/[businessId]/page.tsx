@@ -5,6 +5,10 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
+import { PageHeader } from "@/components/ui/PageHeader";
+import { StatsCard } from "@/components/ui/StatsCard";
+import { Skeleton } from "@/components/ui/Skeleton";
+
 interface DashboardStats {
   today_sales: number;
   avg_daily_sales: number;
@@ -58,119 +62,170 @@ export default function DashboardPage() {
   // Skeleton loader
   if (loading) {
     return (
-      <div style={{ padding: "32px 40px" }}>
-        <div className="ge-skeleton" style={{ width: "180px", height: "28px", marginBottom: "24px" }} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
+      <div className="ge-page-container">
+        <div style={{ marginBottom: "var(--space-3)" }}>
+          <Skeleton width="200px" height="32px" className="mb-2" />
+          <Skeleton width="300px" height="18px" />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
           {[1, 2, 3, 4].map((n) => (
-            <div key={n} className="ge-metric-card" style={{ padding: "20px" }}>
-              <div className="ge-skeleton" style={{ width: "80px", height: "12px", marginBottom: "12px" }} />
-              <div className="ge-skeleton" style={{ width: "120px", height: "24px", marginBottom: "8px" }} />
-              <div className="ge-skeleton" style={{ width: "100px", height: "12px" }} />
+            <div key={n} className="ge-card" style={{ padding: "var(--space-3)" }}>
+              <Skeleton width="80px" height="14px" className="mb-3" />
+              <Skeleton width="120px" height="28px" className="mb-2" />
+              <Skeleton width="100px" height="14px" />
             </div>
           ))}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px" }}>
-          <div className="ge-metric-card" style={{ padding: "20px" }}><div className="ge-skeleton" style={{ width: "100%", height: "140px" }} /></div>
-          <div className="ge-metric-card" style={{ padding: "20px" }}><div className="ge-skeleton" style={{ width: "100%", height: "140px" }} /></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-2)" }}>
+          <div className="ge-card" style={{ height: "200px" }} />
+          <div className="ge-card" style={{ height: "200px" }} />
         </div>
       </div>
     );
   }
 
-  if (!stats) return <div style={{ padding: "60px 40px", color: "var(--ge-text-muted)" }}>Could not load dashboard.</div>;
+  if (!stats) return <div className="ge-page-container" style={{ color: "var(--text-muted)" }}>Could not load dashboard.</div>;
 
   const salesComparison = stats.avg_daily_sales > 0
     ? ((stats.today_sales - stats.avg_daily_sales) / stats.avg_daily_sales * 100).toFixed(0) : null;
   const maxTrend = Math.max(...trend.map((t) => t.total), 1);
 
   return (
-    <div style={{ padding: "clamp(16px, 4vw, 32px) clamp(16px, 4vw, 40px)" }}>
+    <div className="ge-page-container">
       {/* Header */}
-      <div className="ge-page-header ge-animate-in">
-        <div>
-          <h1 className="ge-page-title">Dashboard</h1>
-          <p className="ge-page-desc">Real-time overview of your business</p>
-        </div>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Real-time financial and operations overview"
+      />
+
+      {/* Top metrics with Hero Dominance */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
+        <StatsCard
+          label="Today's Sales"
+          value={`₹${stats.today_sales.toLocaleString("en-IN")}`}
+          subValue={salesComparison ? `${Number(salesComparison) >= 0 ? "↑" : "↓"} ${Math.abs(Number(salesComparison))}% vs 30d avg` : "Average daily benchmark"}
+          subColor={Number(salesComparison || 0) >= 0 ? "var(--success)" : "var(--danger)"}
+          icon="💰"
+          isHero={true}
+        />
+        <StatsCard
+          label="Total Receivable"
+          value={`₹${stats.total_receivable.toLocaleString("en-IN")}`}
+          subValue={stats.overdue_count > 0 ? `${stats.overdue_count} invoices overdue` : "All invoices current"}
+          subColor={stats.overdue_count > 0 ? "var(--danger)" : "var(--success)"}
+          icon="📥"
+          badge={stats.overdue_count > 0 ? { text: `${stats.overdue_count} Overdue`, variant: "danger" } : undefined}
+        />
+        <StatsCard
+          label="Total Payable"
+          value={`₹${stats.total_payable.toLocaleString("en-IN")}`}
+          subValue={`${stats.total_suppliers} active suppliers`}
+          icon="📤"
+        />
+        <StatsCard
+          label="Action Alerts"
+          value={stats.low_stock_count + stats.due_today_count}
+          subValue={`${stats.due_today_count} due today · ${stats.low_stock_count} low stock items`}
+          subColor={stats.low_stock_count > 0 ? "var(--warning)" : "var(--text-muted)"}
+          icon="⚡"
+          badge={stats.low_stock_count > 0 ? { text: "Attention", variant: "warning" } : undefined}
+        />
       </div>
 
-      {/* Top metrics */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px", marginBottom: "24px" }}>
-        <MetricCard label="Today's Sales" value={stats.today_sales} prefix="₹" format
-          sub={salesComparison ? `${Number(salesComparison) >= 0 ? "↑" : "↓"} ${Math.abs(Number(salesComparison))}% vs avg` : "—"}
-          subColor={Number(salesComparison || 0) >= 0 ? "var(--ge-success)" : "var(--ge-error)"}
-          highlight delay={0} />
-        <MetricCard label="Receivable" value={stats.total_receivable} prefix="₹" format
-          sub={stats.overdue_count > 0 ? `${stats.overdue_count} overdue` : "All current"}
-          subColor={stats.overdue_count > 0 ? "var(--ge-error)" : "var(--ge-success)"}
-          badge={stats.overdue_count > 0 ? "danger" : undefined} delay={1} />
-        <MetricCard label="Payable" value={stats.total_payable} prefix="₹" format
-          sub={`${stats.total_suppliers} suppliers`} delay={2} />
-        <MetricCard label="Alerts" value={stats.low_stock_count + stats.due_today_count}
-          sub={`${stats.due_today_count} due today · ${stats.low_stock_count} low stock`}
-          subColor={stats.low_stock_count > 0 ? "var(--ge-warning)" : "var(--ge-text-muted)"}
-          badge={stats.low_stock_count > 0 ? "warning" : undefined} delay={3} />
-      </div>
-
-      {/* Quick links */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px", marginBottom: "24px" }}>
+      {/* Quick Navigation Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
         <QuickLink href={`/app/${businessId}/customers`} icon="👤" label="Customers" count={stats.total_customers} />
         <QuickLink href={`/app/${businessId}/suppliers`} icon="🏭" label="Suppliers" count={stats.total_suppliers} />
         <QuickLink href={`/app/${businessId}/products`} icon="📦" label="Products" count={stats.total_products} />
-        <QuickLink href={`/app/${businessId}/inventory`} icon="📋" label="Inventory"
+        <QuickLink
+          href={`/app/${businessId}/inventory`}
+          icon="📋"
+          label="Inventory"
           count={stats.low_stock_count}
-          badge={stats.low_stock_count > 0 ? "warning" : undefined}
-          badgeText={stats.low_stock_count > 0 ? "Low" : undefined} />
+          badgeText={stats.low_stock_count > 0 ? "Low Stock" : undefined}
+          badgeVariant={stats.low_stock_count > 0 ? "warning" : undefined}
+        />
       </div>
 
-      {/* Charts row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+      {/* Charts & Analytics row */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
         {/* Sales trend */}
-        <div className="ge-metric-card" style={{ padding: "20px" }}>
-          <h3 style={{ fontSize: "var(--ge-text-sm)", fontWeight: 600, color: "var(--ge-text-primary)", marginBottom: "16px" }}>Sales Trend <span style={{ color: "var(--ge-text-muted)", fontWeight: 400 }}>· 30 days</span></h3>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: "2px", height: "120px" }}>
+        <div className="ge-card">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-2)" }}>
+            <h3 style={{ fontSize: "var(--font-base)", fontWeight: 600, color: "var(--text-primary)" }}>
+              Sales Trend
+            </h3>
+            <span style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", fontWeight: 500 }}>
+              Last 30 days
+            </span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "flex-end", gap: "3px", height: "140px", padding: "8px 0" }}>
             {trend.map((t, i) => {
               const h = maxTrend > 0 ? (t.total / maxTrend * 100) : 0;
               return (
-                <div key={i} title={`${new Date(t.d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}: ₹${t.total.toLocaleString("en-IN")}`} style={{
-                  flex: 1, height: `${Math.max(h, 2)}%`, borderRadius: "3px 3px 0 0",
-                  background: t.total > 0
-                    ? `linear-gradient(180deg, var(--ge-accent) 0%, rgba(79,70,229,0.3) 100%)`
-                    : "rgba(255,255,255,0.03)",
-                  opacity: t.total > 0 ? 0.6 + (h / 250) : 1,
-                  transition: "all 0.4s ease", cursor: "pointer",
-                }} />
+                <div
+                  key={i}
+                  title={`${new Date(t.d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}: ₹${t.total.toLocaleString("en-IN")}`}
+                  style={{
+                    flex: 1,
+                    height: `${Math.max(h, 3)}%`,
+                    borderRadius: "4px 4px 0 0",
+                    backgroundColor: t.total > 0 ? "var(--primary)" : "var(--border-subtle)",
+                    opacity: t.total > 0 ? 0.7 + (h / 300) : 0.4,
+                    transition: "height 0.3s ease, opacity 0.2s ease",
+                    cursor: "pointer",
+                  }}
+                />
               );
             })}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
-            <span style={{ fontSize: "var(--ge-text-xs)", color: "var(--ge-text-muted)" }}>30 days ago</span>
-            <span style={{ fontSize: "var(--ge-text-xs)", color: "var(--ge-text-muted)" }}>Today</span>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "var(--space-1)", borderTop: "1px solid var(--border-subtle)", paddingTop: "8px" }}>
+            <span style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)" }}>30 days ago</span>
+            <span style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)" }}>Today</span>
           </div>
         </div>
 
         {/* Top products */}
-        <div className="ge-metric-card" style={{ padding: "20px" }}>
-          <h3 style={{ fontSize: "var(--ge-text-sm)", fontWeight: 600, color: "var(--ge-text-primary)", marginBottom: "16px" }}>Top Products <span style={{ color: "var(--ge-text-muted)", fontWeight: 400 }}>· This Month</span></h3>
+        <div className="ge-card">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-2)" }}>
+            <h3 style={{ fontSize: "var(--font-base)", fontWeight: 600, color: "var(--text-primary)" }}>
+              Top Products
+            </h3>
+            <span style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", fontWeight: 500 }}>
+              This Month
+            </span>
+          </div>
+
           {topProducts.length === 0 ? (
-            <div className="ge-empty-state" style={{ padding: "20px 0" }}>
-              <div className="ge-empty-icon">📊</div>
-              <p className="ge-empty-desc">No sales data this month yet</p>
+            <div style={{ padding: "var(--space-4) 0", textAlign: "center", color: "var(--text-muted)" }}>
+              <div style={{ fontSize: "2rem", marginBottom: "8px" }}>📊</div>
+              <p style={{ fontSize: "var(--font-sm)" }}>No sales recorded this month yet</p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
               {topProducts.map((p, i) => {
                 const maxRev = topProducts[0].total_revenue || 1;
                 return (
                   <div key={i}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "var(--ge-text-sm)", color: "var(--ge-text-primary)", fontWeight: 500 }}>{p.product_name}</span>
-                      <span style={{ fontSize: "var(--ge-text-xs)", fontVariantNumeric: "tabular-nums", color: "var(--ge-accent)", fontWeight: 600 }}>₹{p.total_revenue.toLocaleString("en-IN")}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <span style={{ fontSize: "var(--font-sm)", color: "var(--text-primary)", fontWeight: 500 }}>
+                        {p.product_name}
+                      </span>
+                      <span style={{ fontSize: "var(--font-sm)", fontVariantNumeric: "tabular-nums", color: "var(--primary)", fontWeight: 600 }}>
+                        ₹{p.total_revenue.toLocaleString("en-IN")}
+                      </span>
                     </div>
-                    <div style={{ height: "4px", borderRadius: "2px", background: "var(--ge-bg-secondary)" }}>
-                      <div style={{
-                        height: "100%", borderRadius: "2px", width: `${(p.total_revenue / maxRev * 100)}%`,
-                        background: "var(--ge-gradient)", transition: "width 0.6s ease",
-                      }} />
+                    <div style={{ height: "6px", borderRadius: "var(--radius-full)", backgroundColor: "var(--bg-elevated)", overflow: "hidden" }}>
+                      <div
+                        style={{
+                          height: "100%",
+                          borderRadius: "var(--radius-full)",
+                          width: `${(p.total_revenue / maxRev * 100)}%`,
+                          backgroundColor: "var(--primary)",
+                          transition: "width 0.4s ease",
+                        }}
+                      />
                     </div>
                   </div>
                 );
@@ -180,97 +235,126 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Outstanding tables */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
-        <OutstandingTable title="Customer Receivable" rows={custOutstanding} linkBase={`/app/${businessId}/customers`} emptyMsg="No outstanding receivables" type="danger" />
-        <OutstandingTable title="Supplier Payable" rows={suppOutstanding} linkBase={`/app/${businessId}/suppliers`} emptyMsg="No outstanding payables" type="warning" />
+      {/* Outstanding balance cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-2)" }}>
+        <OutstandingTable
+          title="Customer Receivables"
+          rows={custOutstanding}
+          linkBase={`/app/${businessId}/customers`}
+          emptyMsg="No pending customer receivables"
+          type="danger"
+        />
+        <OutstandingTable
+          title="Supplier Payables"
+          rows={suppOutstanding}
+          linkBase={`/app/${businessId}/suppliers`}
+          emptyMsg="No pending supplier payables"
+          type="warning"
+        />
       </div>
     </div>
   );
 }
 
-// Count-up metric card
-function MetricCard({ label, value, prefix, sub, subColor, format, highlight, badge, delay }: {
-  label: string; value: number; prefix?: string; sub?: string; subColor?: string;
-  format?: boolean; highlight?: boolean; badge?: "success" | "warning" | "danger"; delay?: number;
+function QuickLink({
+  href,
+  icon,
+  label,
+  count,
+  badgeText,
+  badgeVariant,
+}: {
+  href: string;
+  icon: string;
+  label: string;
+  count: number;
+  badgeText?: string;
+  badgeVariant?: "success" | "warning" | "danger" | "neutral" | "primary";
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [display, setDisplay] = useState("0");
-
-  useEffect(() => {
-    let start = 0;
-    const end = value;
-    const duration = 500;
-    const startTime = Date.now() + (delay || 0) * 80;
-
-    function step() {
-      const now = Date.now();
-      if (now < startTime) { requestAnimationFrame(step); return; }
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      start = Math.round(eased * end);
-      setDisplay(format ? start.toLocaleString("en-IN") : String(start));
-      if (progress < 1) requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
-  }, [value, format, delay]);
-
   return (
-    <div ref={ref} className={`ge-metric-card ge-animate-in ge-animate-delay-${delay || 0}`}
-      style={highlight ? { background: "var(--ge-gradient-subtle)", borderColor: "rgba(79,70,229,0.2)" } : {}}>
-      <div className="ge-metric-label">{label}</div>
-      <div className="ge-metric-value ge-count-up" style={{ display: "flex", alignItems: "baseline", gap: "2px" }}>
-        {prefix && <span style={{ fontSize: "var(--ge-text-sm)", fontWeight: 500, opacity: 0.7 }}>{prefix}</span>}
-        {display}
+    <Link
+      href={href}
+      className="ge-card"
+      style={{
+        textDecoration: "none",
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        padding: "var(--space-2)",
+        transition: "border-color 0.15s ease",
+      }}
+    >
+      <span style={{ fontSize: "1.5rem" }}>{icon}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>{label}</div>
+        <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{count} Total</div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
-        {sub && <span style={{ fontSize: "var(--ge-text-xs)", color: subColor || "var(--ge-text-muted)" }}>{sub}</span>}
-        {badge && <span className={`ge-badge ge-badge-${badge}`} style={{ fontSize: "10px", padding: "1px 6px" }}>{badge === "danger" ? "Overdue" : badge === "warning" ? "Alert" : "OK"}</span>}
-      </div>
-    </div>
-  );
-}
-
-function QuickLink({ href, icon, label, count, badge, badgeText }: { href: string; icon: string; label: string; count: number; badge?: string; badgeText?: string }) {
-  return (
-    <Link href={href} style={{
-      background: "var(--ge-bg-card)", border: "1px solid var(--ge-border)",
-      borderRadius: "var(--ge-radius)", padding: "14px 16px", textDecoration: "none",
-      display: "flex", alignItems: "center", gap: "10px", transition: "all var(--ge-transition)",
-    }} className="ge-table-row">
-      <span style={{ fontSize: "1.25rem" }}>{icon}</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: "var(--ge-text-sm)", fontWeight: 500, color: "var(--ge-text-primary)" }}>{label}</div>
-        <div style={{ fontSize: "var(--ge-text-xs)", color: "var(--ge-text-muted)", fontVariantNumeric: "tabular-nums" }}>{count}</div>
-      </div>
-      {badge && <span className={`ge-badge ge-badge-${badge}`}>{badgeText}</span>}
+      {badgeText && (
+        <span className={`ge-badge ge-badge-${badgeVariant || "neutral"}`}>
+          {badgeText}
+        </span>
+      )}
     </Link>
   );
 }
 
-function OutstandingTable({ title, rows, linkBase, emptyMsg, type }: { title: string; rows: OutstandingRow[]; linkBase: string; emptyMsg: string; type: "danger" | "warning" }) {
+function OutstandingTable({
+  title,
+  rows,
+  linkBase,
+  emptyMsg,
+  type,
+}: {
+  title: string;
+  rows: OutstandingRow[];
+  linkBase: string;
+  emptyMsg: string;
+  type: "danger" | "warning";
+}) {
   return (
-    <div className="ge-metric-card" style={{ padding: "20px" }}>
-      <h3 style={{ fontSize: "var(--ge-text-sm)", fontWeight: 600, color: "var(--ge-text-primary)", marginBottom: "12px" }}>{title}</h3>
+    <div className="ge-card">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-2)" }}>
+        <h3 style={{ fontSize: "var(--font-base)", fontWeight: 600, color: "var(--text-primary)" }}>
+          {title}
+        </h3>
+        <span className={`ge-badge ge-badge-${type === "danger" ? "danger" : "warning"}`}>
+          {rows.length} pending
+        </span>
+      </div>
+
       {rows.length === 0 ? (
-        <div className="ge-empty-state" style={{ padding: "20px 0" }}>
-          <div className="ge-empty-icon">✅</div>
-          <p className="ge-empty-desc">{emptyMsg}</p>
+        <div style={{ padding: "var(--space-3) 0", textAlign: "center", color: "var(--text-muted)" }}>
+          <p style={{ fontSize: "var(--font-sm)" }}>{emptyMsg}</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column" }}>
-          {rows.slice(0, 8).map((r) => (
-            <Link key={r.id} href={`${linkBase}/${r.id}`} style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "8px 0", borderBottom: "1px solid var(--ge-border)", textDecoration: "none",
-              transition: "all var(--ge-transition)",
-            }}>
-              <span style={{ fontSize: "var(--ge-text-sm)", color: "var(--ge-text-primary)", fontWeight: 500 }}>{r.name}</span>
-              <span style={{
-                fontSize: "var(--ge-text-sm)", fontVariantNumeric: "tabular-nums", fontWeight: 600,
-                color: type === "danger" ? "var(--ge-error)" : "var(--ge-warning)",
-              }}>₹{r.outstanding.toLocaleString("en-IN")}</span>
+          {rows.slice(0, 6).map((r) => (
+            <Link
+              key={r.id}
+              href={`${linkBase}/${r.id}`}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "10px 0",
+                borderBottom: "1px solid var(--border-subtle)",
+                textDecoration: "none",
+                transition: "background-color 0.15s ease",
+              }}
+            >
+              <span style={{ fontSize: "var(--font-sm)", color: "var(--text-primary)", fontWeight: 500 }}>
+                {r.name}
+              </span>
+              <span
+                style={{
+                  fontSize: "var(--font-sm)",
+                  fontVariantNumeric: "tabular-nums",
+                  fontWeight: 600,
+                  color: type === "danger" ? "var(--danger)" : "var(--warning)",
+                }}
+              >
+                ₹{r.outstanding.toLocaleString("en-IN")}
+              </span>
             </Link>
           ))}
         </div>

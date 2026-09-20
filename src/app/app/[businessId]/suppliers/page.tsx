@@ -5,6 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Supplier } from "@/lib/types";
 import Link from "next/link";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { DataTable, Column } from "@/components/ui/DataTable";
+import { DetailPanel } from "@/components/ui/DetailPanel";
+import { MobileCardList } from "@/components/ui/MobileCardList";
 
 export default function SuppliersPage() {
   const params = useParams();
@@ -14,8 +21,7 @@ export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "outstanding_balance" | "created_at">("name");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
   useEffect(() => {
     loadSuppliers();
@@ -33,87 +39,261 @@ export default function SuppliersPage() {
     setLoading(false);
   }
 
-  function handleSort(col: typeof sortBy) {
-    if (sortBy === col) setSortAsc(!sortAsc);
-    else { setSortBy(col); setSortAsc(true); }
-  }
+  const filtered = suppliers.filter((s) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      s.name.toLowerCase().includes(q) ||
+      (s.phone || "").includes(q) ||
+      (s.email || "").toLowerCase().includes(q)
+    );
+  });
 
-  const filtered = suppliers
-    .filter((s) => {
-      if (!search.trim()) return true;
-      const q = search.toLowerCase();
-      return s.name.toLowerCase().includes(q) || (s.phone || "").includes(q) || (s.email || "").toLowerCase().includes(q);
-    })
-    .sort((a, b) => {
-      let cmp = 0;
-      if (sortBy === "name") cmp = a.name.localeCompare(b.name);
-      else if (sortBy === "outstanding_balance") cmp = a.outstanding_balance - b.outstanding_balance;
-      else cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      return sortAsc ? cmp : -cmp;
-    });
-
-  if (loading) return <div style={{ padding: "60px 40px", display: "flex", justifyContent: "center" }}><span className="ge-spinner" /></div>;
+  const columns: Column<Supplier>[] = [
+    {
+      header: "Supplier Name",
+      accessor: (s) => (
+        <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+          {s.name}
+        </span>
+      ),
+    },
+    {
+      header: "Phone",
+      accessor: (s) => (
+        <span style={{ color: "var(--text-secondary)", fontSize: "var(--font-sm)" }}>
+          {s.phone || "—"}
+        </span>
+      ),
+    },
+    {
+      header: "Email",
+      accessor: (s) => (
+        <span style={{ color: "var(--text-secondary)", fontSize: "var(--font-sm)" }}>
+          {s.email || "—"}
+        </span>
+      ),
+    },
+    {
+      header: "GSTIN",
+      accessor: (s) => (
+        <span style={{ fontFamily: "monospace", color: "var(--text-muted)", fontSize: "var(--font-xs)" }}>
+          {s.gstin || "—"}
+        </span>
+      ),
+    },
+    {
+      header: "Payable Balance",
+      align: "right",
+      accessor: (s) => (
+        <span
+          style={{
+            fontFamily: "monospace",
+            fontWeight: 700,
+            fontSize: "var(--font-sm)",
+            color: s.outstanding_balance > 0 ? "var(--warning)" : "var(--success)",
+          }}
+        >
+          ₹{s.outstanding_balance.toLocaleString("en-IN")}
+        </span>
+      ),
+    },
+  ];
 
   return (
-    <div style={{ padding: "40px" }}>
-      <div className="ge-animate-in">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-          <div>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--ge-text-primary)", letterSpacing: "-0.02em", marginBottom: "4px" }}>Suppliers</h1>
-            <p style={{ fontSize: "0.875rem", color: "var(--ge-text-secondary)" }}>{suppliers.length} supplier{suppliers.length !== 1 ? "s" : ""}</p>
-          </div>
-          <Link href={`/app/${businessId}/suppliers/new`} className="ge-btn-primary" style={{ width: "auto", padding: "10px 20px", fontSize: "0.875rem", textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-            <span>+ Add supplier</span>
-          </Link>
-        </div>
+    <div className="ge-page-container">
+      {/* Desktop Header */}
+      <div className="ge-desktop-only">
+        <PageHeader
+          title="Suppliers"
+          description={`${suppliers.length} vendor${suppliers.length !== 1 ? "s" : ""} and supplier profiles`}
+          action={
+            <Link href={`/app/${businessId}/suppliers/new`} style={{ textDecoration: "none" }}>
+              <Button variant="primary" icon="＋">Add Supplier</Button>
+            </Link>
+          }
+        />
+      </div>
 
-        <div style={{ marginBottom: "20px" }}>
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, phone, or email…" className="ge-input" style={{ maxWidth: "400px" }} />
-        </div>
-
-        {filtered.length === 0 ? (
-          <div style={{ background: "var(--ge-bg-card)", border: "1px solid var(--ge-border)", borderRadius: "var(--ge-radius-lg)", padding: "48px", textAlign: "center", backdropFilter: "blur(20px)" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "12px" }}>🏭</div>
-            <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--ge-text-primary)", marginBottom: "8px" }}>{search ? "No suppliers found" : "No suppliers yet"}</h2>
-            <p style={{ fontSize: "0.875rem", color: "var(--ge-text-secondary)", marginBottom: "20px" }}>{search ? "Try a different search term." : "Add your first supplier to get started."}</p>
-            {!search && <Link href={`/app/${businessId}/suppliers/new`} className="ge-btn-primary" style={{ width: "auto", padding: "10px 24px", display: "inline-flex", textDecoration: "none" }}><span>+ Add supplier</span></Link>}
+      {/* Table States */}
+      {loading ? (
+        <TableSkeleton rows={5} />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon="🏭"
+          title={search ? "No suppliers found" : "No suppliers registered yet"}
+          description={
+            search
+              ? "Try adjusting your search query or phone number filter."
+              : "Keep track of supplier purchase bills, payment terms, and vendor ledgers."
+          }
+          actionLabel={search ? undefined : "Add First Supplier"}
+          actionHref={search ? undefined : `/app/${businessId}/suppliers/new`}
+        />
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="ge-desktop-only">
+            <div style={{ marginBottom: "var(--space-3)" }}>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search suppliers by name, phone, or email…"
+                className="ge-input"
+                style={{ maxWidth: "420px" }}
+              />
+            </div>
+            <DataTable
+              columns={columns}
+              data={filtered}
+              keyExtractor={(s) => s.id}
+              onRowClick={(s) => setSelectedSupplier(s)}
+            />
           </div>
-        ) : (
-          <div style={{ background: "var(--ge-bg-card)", border: "1px solid var(--ge-border)", borderRadius: "var(--ge-radius-lg)", overflow: "hidden", backdropFilter: "blur(20px)" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--ge-border)", fontSize: "0.75rem", color: "var(--ge-text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                  <SortTh label="Name" col="name" current={sortBy} asc={sortAsc} onClick={handleSort} />
-                  <th style={thStyle}>Phone</th>
-                  <th style={thStyle}>Email</th>
-                  <th style={thStyle}>Credit Terms</th>
-                  <SortTh label="Outstanding" col="outstanding_balance" current={sortBy} asc={sortAsc} onClick={handleSort} />
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((s) => (
-                  <tr key={s.id} onClick={() => router.push(`/app/${businessId}/suppliers/${s.id}`)} style={{ borderBottom: "1px solid var(--ge-border)", cursor: "pointer", transition: "background var(--ge-transition)" }} className="ge-table-row">
-                    <td style={tdStyle}><span style={{ fontWeight: 500, color: "var(--ge-text-primary)" }}>{s.name}</span></td>
-                    <td style={tdStyle}>{s.phone || "—"}</td>
-                    <td style={tdStyle}>{s.email || "—"}</td>
-                    <td style={tdStyle}>{s.credit_terms} days</td>
-                    <td style={{ ...tdStyle, fontFamily: "monospace", fontWeight: 500 }}>
-                      {s.outstanding_balance > 0 ? <span style={{ color: "var(--ge-error)" }}>₹{s.outstanding_balance.toLocaleString("en-IN")}</span> : <span style={{ color: "var(--ge-success)" }}>₹0</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+          {/* Mobile Card List View */}
+          <div className="ge-mobile-only">
+            <div style={{ padding: "12px 0 6px 0" }}>
+              <h1 style={{ fontSize: "1.35rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
+                Suppliers
+              </h1>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "2px 0 8px 0" }}>
+                {filtered.length} registered vendor{filtered.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+
+            <MobileCardList
+              items={filtered}
+              keyExtractor={(s) => s.id}
+              searchPlaceholder="Search vendor name or phone..."
+              onSearchChange={(q) => setSearch(q)}
+              onItemClick={(s) => setSelectedSupplier(s)}
+              renderPrimary={(s) => s.name}
+              renderSecondary={(s) => (
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <span>📞 {s.phone || "No phone"}</span>
+                  {s.gstin && <span>• GST: {s.gstin}</span>}
+                </div>
+              )}
+              renderMetric={(s) => (
+                <span style={{ color: s.outstanding_balance > 0 ? "var(--warning)" : "var(--success)" }}>
+                  ₹{s.outstanding_balance.toLocaleString("en-IN")}
+                </span>
+              )}
+              fabAction={{
+                label: "Add Supplier",
+                href: `/app/${businessId}/suppliers/new`,
+              }}
+              actions={[
+                {
+                  label: "View Vendor Details",
+                  icon: "🏭",
+                  onClick: (s) => setSelectedSupplier(s),
+                },
+                {
+                  label: "Open Full Page",
+                  icon: "↗",
+                  onClick: (s) => router.push(`/app/${businessId}/suppliers/${s.id}`),
+                },
+              ]}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Slide-in Detail Drawer for Supplier */}
+      <DetailPanel
+        isOpen={!!selectedSupplier}
+        onClose={() => setSelectedSupplier(null)}
+        title={selectedSupplier?.name || "Supplier Details"}
+        subtitle={selectedSupplier?.email || selectedSupplier?.phone || "Vendor ledger"}
+        statusBadge={{
+          text: (selectedSupplier?.outstanding_balance || 0) > 0 ? "PAYABLE DUE" : "SETTLED",
+          variant: (selectedSupplier?.outstanding_balance || 0) > 0 ? "warning" : "success",
+        }}
+        heroNumber={{
+          label: "Payable Outstanding",
+          value: `₹${(selectedSupplier?.outstanding_balance || 0).toLocaleString("en-IN")}`,
+          color: (selectedSupplier?.outstanding_balance || 0) > 0 ? "var(--warning)" : "var(--success)",
+          caption: (selectedSupplier?.outstanding_balance || 0) > 0 ? "Bill payments due to vendor" : "Zero balance",
+        }}
+        fullPageHref={selectedSupplier ? `/app/${businessId}/suppliers/${selectedSupplier.id}` : undefined}
+        actions={[
+          {
+            label: "Create Purchase Order",
+            variant: "primary",
+            href: `/app/${businessId}/purchases/new?supplierId=${selectedSupplier?.id}`,
+          },
+          {
+            label: "Full Vendor Ledger",
+            variant: "secondary",
+            href: `/app/${businessId}/suppliers/${selectedSupplier?.id}`,
+          },
+        ]}
+      >
+        {selectedSupplier && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                borderRadius: "var(--radius-md)",
+                padding: "16px",
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "14px",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                  Phone
+                </div>
+                <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+                  {selectedSupplier.phone ? (
+                    <a
+                      href={`tel:${selectedSupplier.phone}`}
+                      style={{ color: "var(--primary)", textDecoration: "none" }}
+                    >
+                      {selectedSupplier.phone}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                  GSTIN
+                </div>
+                <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+                  {selectedSupplier.gstin || "Unregistered"}
+                </div>
+              </div>
+
+              <div style={{ gridColumn: "span 2" }}>
+                <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                  Address
+                </div>
+                <div style={{ fontSize: "var(--font-sm)", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                  {selectedSupplier.address || "No address on file."}
+                </div>
+              </div>
+
+              {selectedSupplier.credit_terms ? (
+                <div>
+                  <div style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)", marginBottom: "4px" }}>
+                    Credit Terms
+                  </div>
+                  <div style={{ fontSize: "var(--font-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+                    Net {selectedSupplier.credit_terms} Days
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         )}
-      </div>
+      </DetailPanel>
     </div>
   );
-}
-
-const thStyle: React.CSSProperties = { padding: "12px 16px", textAlign: "left", fontWeight: 500 };
-const tdStyle: React.CSSProperties = { padding: "14px 16px", fontSize: "0.875rem", color: "var(--ge-text-secondary)" };
-
-function SortTh({ label, col, current, asc, onClick }: { label: string; col: string; current: string; asc: boolean; onClick: (c: any) => void }) {
-  return <th style={{ ...thStyle, cursor: "pointer", userSelect: "none" }} onClick={() => onClick(col)}>{label} {current === col ? (asc ? "↑" : "↓") : ""}</th>;
 }
