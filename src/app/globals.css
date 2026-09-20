@@ -1672,5 +1672,570 @@ html, body {
   text-decoration: none;
 }
 
+/* ==========================================================================
+   LUXURY ENTERPRISE DASHBOARD SUITE (Daftra & Qatar Inspiration)
+   ========================================================================== */
+
+.ge-dashboard-wrap {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 28px 48px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .ge-dashboard-wrap {
+    padding: 12px 14px 80px 14px;
+    gap: 16px;
+  }
+}
+
+/* 1. Deep Burgundy Silk Luxury Ribbon Banner */
+.ge-wine-banner {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+  border-radius: 24px;
+  background-color: #580B1E;
+  background-image: url('/dashboard-banner.jpg');
+  background-size: cover;
+  background-position: center right;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 36px;
+  box-shadow: 0 16px 40px -8px rgba(88, 11, 30, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+
+.ge-wine-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(43, 4, 12, 0.88) 0%, rgba(76, 8, 24, 0.6) 50%, rgba(30, 3, 9, 0.75) 100%);
+  pointer-events: none;
+}
+
+.ge-wine-banner-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  gap: 20px;
+  max-width: 580px;
+}
+
+.ge-wine-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  padding: 8px 18px;
+  width: 280px;
+  transition: all 0.2s ease;
+}
+
+.ge-wine-search-box:focus-within {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+  width: 320px;
+}
+
+.ge-wine-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #FFFFFF;
+  font-size: 13.5px;
+  width: 100%;
+}
+
+.ge-wine-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.ge-wine-team-avatars {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ge-wine-avatars-row {
+  display: flex;
+  align-items: center;
+}
+
+.ge-wine-avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #580B1E;
+  background: #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0F172A;
+  margin-left: -8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.ge-wine-avatar-circle:first-child {
+  margin-left: 0;
+}
+
+.ge-wine-banner-right {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 100%;
+  gap: 16px;
+  text-align: right;
+}
+
+.ge-wine-top-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ge-wine-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-size: 15px;
+}
+
+.ge-wine-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.ge-wine-greeting-title {
+  font-family: serif;
+  font-size: 34px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: #FFFFFF;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+}
+
+.ge-wine-greeting-sub {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+@media (max-width: 992px) {
+  .ge-wine-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    gap: 20px;
+  }
+  .ge-wine-banner-right {
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
+  }
+  .ge-wine-top-icons {
+    order: -1;
+  }
+  .ge-wine-greeting-title {
+    font-size: 26px;
+  }
+}
+
+/* 2. Sub-Header Toolbar (Date Filter & Compare Pills) */
+.ge-dashboard-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.ge-dashboard-title-group h2 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.ge-dashboard-title-group p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 2px 0 0 0;
+}
+
+.ge-dashboard-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ge-filter-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9999px;
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.ge-filter-pill-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+/* 3. 4-Column Daftra Metric Cards */
+.ge-daftra-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 1120px) {
+  .ge-daftra-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 580px) {
+  .ge-daftra-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ge-daftra-card {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 22px 24px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ge-daftra-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.ge-daftra-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ge-daftra-card-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.ge-daftra-card-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ge-daftra-card-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ge-daftra-card-curr {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.ge-daftra-card-val {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.ge-daftra-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+}
+
+.ge-daftra-card-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ge-daftra-wave-sparkline {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 110px;
+  height: 48px;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* 4. Analytics Main Grid (Sales Chart & Donut Status) */
+.ge-daftra-analytics-grid {
+  display: grid;
+  grid-template-columns: 1.55fr 0.95fr;
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .ge-daftra-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ge-daftra-main-card {
+  background: var(--bg-card);
+  border-radius: 22px;
+  padding: 24px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+}
+
+.ge-daftra-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.ge-daftra-card-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Column Histogram Chart Styles */
+.ge-daftra-chart-area {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  height: 220px;
+  padding: 10px 10px 0 10px;
+  position: relative;
+}
+
+.ge-daftra-chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.ge-daftra-chart-bar-wrap {
+  width: 100%;
+  max-width: 44px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  position: relative;
+}
+
+.ge-daftra-bar {
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(180deg, #7C122C 0%, #470817 100%);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+}
+
+.ge-daftra-bar:hover {
+  background: linear-gradient(180deg, #9F1239 0%, #6B0F24 100%);
+  box-shadow: 0 6px 16px rgba(124, 18, 44, 0.35);
+}
+
+.ge-daftra-chart-tooltip {
+  position: absolute;
+  top: -46px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0F172A;
+  color: #FFFFFF;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ge-daftra-chart-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid #0F172A;
+}
+
+.ge-daftra-chart-x-labels {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.ge-daftra-chart-footer-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ge-daftra-chart-footer-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Donut & Status Distribution */
+.ge-daftra-donut-center-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 200px;
+}
+
+.ge-daftra-status-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.ge-daftra-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ge-daftra-status-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.ge-daftra-status-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 140px;
+  margin: 0 16px;
+}
+
+.ge-daftra-dash-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.ge-daftra-dash-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+/* 5. Bottom Operations Tables Row */
+.ge-daftra-bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+}
+
 
 

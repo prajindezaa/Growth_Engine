@@ -457,12 +457,46 @@ export default function GroupedSidebar({
         </div>
       </div>
 
+      {/* Primary Action Button (+ Create Invoice) matching Daftra reference */}
+      <div style={{ padding: "0 16px 14px 16px" }}>
+        <Link
+          href={`${base}/sales/invoices/new`}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            width: "100%",
+            padding: "11px 16px",
+            borderRadius: "14px",
+            background: "linear-gradient(135deg, #6B0F24 0%, #881337 100%)",
+            color: "#FFFFFF",
+            fontSize: "13.5px",
+            fontWeight: 700,
+            textDecoration: "none",
+            boxShadow: "0 4px 14px rgba(107, 15, 36, 0.35)",
+            transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-1px)";
+            e.currentTarget.style.boxShadow = "0 6px 18px rgba(107, 15, 36, 0.45)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 4px 14px rgba(107, 15, 36, 0.35)";
+          }}
+        >
+          <span style={{ fontSize: "16px", fontWeight: 800 }}>+</span>
+          <span>Create Invoice</span>
+        </Link>
+      </div>
+
       {/* Main Navigation Tree Scroll Area */}
       <div
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: "8px 16px 24px 16px",
+          padding: "8px 16px 16px 16px",
           display: "flex",
           flexDirection: "column",
           gap: "6px",
@@ -749,6 +783,61 @@ export default function GroupedSidebar({
             )}
           </div>
         )}
+
+        {/* Upgrade to Pro Card matching Daftra reference */}
+        <div
+          style={{
+            marginTop: "16px",
+            background: "linear-gradient(145deg, #18181B 0%, #09090B 100%)",
+            borderRadius: "14px",
+            padding: "16px",
+            color: "#FFFFFF",
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: "-20px",
+              right: "-20px",
+              width: "70px",
+              height: "70px",
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(136, 19, 55, 0.4) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }}
+          />
+          <div style={{ fontSize: "13.5px", fontWeight: 700, marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+            <span>Become a Pro access</span>
+          </div>
+          <p style={{ fontSize: "11px", color: "#A1A1AA", lineHeight: 1.45, margin: "0 0 12px 0" }}>
+            Unlock exclusive automated GST filings, priority AI Copilot tools, and multi-store analytics.
+          </p>
+          <Link
+            href={`${base}/subscription`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              padding: "7px 12px",
+              borderRadius: "9px",
+              background: "#FFFFFF",
+              color: "#09090B",
+              fontSize: "12px",
+              fontWeight: 700,
+              textDecoration: "none",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#F4F4F5")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#FFFFFF")}
+          >
+            ✦ Upgrade Pro
+          </Link>
+        </div>
       </div>
 
       {/* Pinned Bottom User Menu */}
