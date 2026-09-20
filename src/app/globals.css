@@ -324,61 +324,212 @@ html, body {
   }
 }
 
-/* Mobile Bottom Navigation Bar */
-.ge-mobile-nav {
+/* ================================================================
+   Mobile Curved Floating Bottom Bar (Matching User Reference)
+   ================================================================ */
+
+@media (min-width: 769px) {
+  .ge-mobile-nav-wrapper {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .ge-ai-orb {
+    display: none !important; /* AI trigger is integrated into the center green notch */
+  }
+  .ge-main-content {
+    padding-bottom: 96px !important;
+  }
+}
+
+.ge-mobile-nav-wrapper {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 990;
-  background-color: var(--bg-card);
-  border-top: 1px solid var(--border-subtle);
-  padding: 6px 12px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
-}
-
-@media (max-width: 768px) {
-  .ge-ai-orb {
-    bottom: 76px !important;
-    right: 16px !important;
-  }
-}
-
-.ge-mobile-nav-inner {
   display: flex;
-  align-items: center;
-  justify-content: space-around;
-  max-width: 600px;
-  margin: 0 auto;
+  justify-content: center;
+  align-items: flex-end;
+  pointer-events: none;
+  padding: 0 16px 14px 16px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
 }
 
-.ge-mobile-nav-item {
+.ge-mobile-nav-bar {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  height: 64px;
+  pointer-events: auto;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.22));
+}
+
+/* Organic curved SVG background shape */
+.ge-mobile-nav-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.ge-mobile-nav-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ge-mobile-nav-path {
+  fill: #FFFFFF;
+  transition: fill 0.2s ease;
+}
+
+[data-theme="dark"] .ge-mobile-nav-path,
+:root:not([data-theme="light"]) .ge-mobile-nav-path {
+  fill: #1E293B;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 0.5px;
+}
+
+/* Nav tabs layout */
+.ge-mobile-nav-content {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr 68px 1fr 1fr;
+  align-items: center;
+  height: 100%;
+  padding: 0 8px;
+}
+
+.ge-nav-tab {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
   background: transparent;
   border: none;
-  color: var(--text-muted);
   text-decoration: none;
-  font-size: var(--font-xs);
-  font-weight: 500;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
+  color: #94A3B8;
   cursor: pointer;
-  min-width: 54px;
-  transition: color 0.15s ease;
+  padding: 4px 0;
+  gap: 3px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.ge-mobile-nav-item.active {
-  color: var(--primary);
+.ge-nav-tab:hover {
+  color: #0F766E;
+}
+
+.ge-nav-tab.active {
+  color: #0D9488;
+}
+
+[data-theme="dark"] .ge-nav-tab.active,
+:root:not([data-theme="light"]) .ge-nav-tab.active {
+  color: #2DD4BF;
+}
+
+.ge-nav-icon-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  transition: transform 0.2s ease;
+}
+
+.ge-nav-tab:active .ge-nav-icon-wrap {
+  transform: scale(0.9);
+}
+
+/* Small active indicator dot directly below active icon */
+.ge-nav-active-dot {
+  position: absolute;
+  bottom: -4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  animation: ge-popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ge-popIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ge-nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  opacity: 0.85;
+}
+
+.ge-nav-tab.active .ge-nav-label {
   font-weight: 600;
+  opacity: 1;
 }
 
-.ge-mobile-nav-item span:first-child {
-  font-size: 1.2rem;
-  line-height: 1;
+/* Central Elevated Green Button */
+.ge-nav-center-slot {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  height: 100%;
+  position: relative;
+}
+
+.ge-nav-center-btn {
+  position: absolute;
+  top: -20px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #10B981, #047857);
+  border: 3.5px solid #FFFFFF;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(16, 185, 129, 0.4), 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-theme="dark"] .ge-nav-center-btn,
+:root:not([data-theme="light"]) .ge-nav-center-btn {
+  background: linear-gradient(145deg, #059669, #065F46);
+  border-color: #1E293B;
+  box-shadow: 0 8px 22px rgba(5, 150, 105, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.ge-nav-center-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.ge-nav-center-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 /* Bottom Sheet Overlay & Drawer */

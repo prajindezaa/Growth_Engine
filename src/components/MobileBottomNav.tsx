@@ -92,83 +92,162 @@ export default function MobileBottomNav({ businessId, role = "sales" }: MobileBo
 
   return (
     <>
-      <nav className="ge-mobile-nav" aria-label="Mobile Navigation">
-        <div className="ge-mobile-nav-inner">
-          {tabs.map((tab) => {
-            if (tab.action === "ai") {
-              return (
-                <button
-                  key="ai"
-                  className="ge-mobile-nav-item ge-touch-target"
-                  onClick={() => window.dispatchEvent(new Event("toggle-ai-chat"))}
-                  aria-label="Toggle GrowthEngine AI"
-                >
-                  <span
-                    style={{
-                      width: "30px",
-                      height: "30px",
-                      borderRadius: "50%",
-                      background: "var(--ai-accent)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "0.85rem",
-                      boxShadow: "0 2px 8px rgba(124, 58, 237, 0.4)",
-                      color: "#fff",
-                    }}
-                  >
-                    ✨
-                  </span>
-                  <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--ai-accent)" }}>
-                    {tab.label}
-                  </span>
-                </button>
-              );
-            }
-            if (tab.action === "more") {
-              const moreActive = showMore;
-              return (
-                <button
-                  key="more"
-                  className={`ge-mobile-nav-item ge-touch-target ${moreActive ? "active" : ""}`}
-                  onClick={() => setShowMore(!showMore)}
-                  aria-label="Open More Menu"
-                >
-                  <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>{tab.icon}</span>
-                  <span style={{ fontSize: "11px" }}>{tab.label}</span>
-                </button>
-              );
-            }
+      <div className="ge-mobile-nav-wrapper">
+        {/* Curved Floating Bar with Smooth Center Notch */}
+        <div className="ge-mobile-nav-bar">
+          {/* SVG Background Path with smooth organic scoop/cutout */}
+          <div className="ge-mobile-nav-bg">
+            <svg
+              viewBox="0 0 400 68"
+              preserveAspectRatio="none"
+              className="ge-mobile-nav-svg"
+            >
+              <defs>
+                <filter id="ge-nav-shadow" x="-8%" y="-15%" width="116%" height="135%">
+                  <feDropShadow dx="0" dy="8" stdDeviation="12" floodColor="rgba(0, 0, 0, 0.18)" />
+                </filter>
+              </defs>
+              {/*
+                Smooth continuous shape:
+                Top left rounded corner -> flat top -> smooth curve down to cradle center button (radius ~32px) -> curve back up -> flat top -> top right rounded corner -> flat bottom
+              */}
+              <path
+                d="M 28 8 
+                   L 142 8 
+                   C 160 8 168 18 174 28 
+                   C 181 40 188 46 200 46 
+                   C 212 46 219 40 226 28 
+                   C 232 18 240 8 258 8 
+                   L 372 8 
+                   A 20 20 0 0 1 392 28 
+                   L 392 48 
+                   A 20 20 0 0 1 372 68 
+                   L 28 68 
+                   A 20 20 0 0 1 8 48 
+                   L 8 28 
+                   A 20 20 0 0 1 28 8 
+                   Z"
+                className="ge-mobile-nav-path"
+              />
+            </svg>
+          </div>
 
-            const active = isActive(tab.match!);
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href!}
-                className={`ge-mobile-nav-item ge-touch-target ${active ? "active" : ""}`}
-                onClick={() => setShowMore(false)}
+          {/* Nav Items Container */}
+          <nav className="ge-mobile-nav-content" aria-label="Mobile Navigation">
+            {/* Slot 1: Dashboard */}
+            {(() => {
+              const active = isActive(base);
+              return (
+                <Link
+                  href={base}
+                  className={`ge-nav-tab ${active ? "active" : ""}`}
+                  onClick={() => setShowMore(false)}
+                  aria-label="Dashboard"
+                >
+                  <div className="ge-nav-icon-wrap">
+                    {/* Minimalist List / Dashboard Icon matching slot 1 in image */}
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="4" />
+                      <line x1="7" y1="8" x2="13" y2="8" />
+                      <line x1="7" y1="12" x2="17" y2="12" />
+                      <line x1="7" y1="16" x2="13" y2="16" />
+                    </svg>
+                    {active && <span className="ge-nav-active-dot" />}
+                  </div>
+                  <span className="ge-nav-label">Dashboard</span>
+                </Link>
+              );
+            })()}
+
+            {/* Slot 2: Sales or POS */}
+            {(() => {
+              const targetHref = isCashier && canAccessPOS(role) ? `${base}/pos` : `${base}/sales`;
+              const targetLabel = isCashier && canAccessPOS(role) ? "POS" : "Sales";
+              const active = isActive(targetHref);
+              return (
+                <Link
+                  href={targetHref}
+                  className={`ge-nav-tab ${active ? "active" : ""}`}
+                  onClick={() => setShowMore(false)}
+                  aria-label={targetLabel}
+                >
+                  <div className="ge-nav-icon-wrap">
+                    {/* Sprout / Leaf icon matching slot 2 in user reference */}
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M7 20h10" />
+                      <path d="M10 20c0-4 1.5-7.5 4-10" />
+                      <path d="M14 10c1-3.5 4.5-5 7-5 0 2.5-1.5 6-5 7" />
+                      <path d="M11 15c-2.5-1-4-3.5-4-6 2.5 0 5 1.5 6 4" />
+                    </svg>
+                    {active && <span className="ge-nav-active-dot" />}
+                  </div>
+                  <span className="ge-nav-label">{targetLabel}</span>
+                </Link>
+              );
+            })()}
+
+            {/* Center Slot: Elevated Floating Circular AI Action Button */}
+            <div className="ge-nav-center-slot">
+              <button
+                type="button"
+                className="ge-nav-center-btn"
+                onClick={() => window.dispatchEvent(new Event("toggle-ai-chat"))}
+                aria-label="GrowthEngine AI Assistant"
               >
-                <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>{tab.icon}</span>
-                  <span style={{ fontSize: "11px", marginTop: "2px" }}>{tab.label}</span>
-                  {active && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        bottom: "-4px",
-                        width: "16px",
-                        height: "2px",
-                        borderRadius: "2px",
-                        backgroundColor: "var(--primary)",
-                      }}
-                    />
-                  )}
+                <div className="ge-nav-center-icon">
+                  {/* Triple leaf / Lotus emblem matching image center */}
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3c-2 4-2 7 0 10 2-3 2-6 0-10z" />
+                    <path d="M12 13c-4-1-6.5.5-8 3 2.5 2 6 1.5 8-3z" />
+                    <path d="M12 13c4-1 6.5.5 8 3-2.5 2-6 1.5-8-3z" />
+                    <circle cx="12" cy="18" r="1.5" fill="currentColor" />
+                  </svg>
                 </div>
-              </Link>
-            );
-          })}
+              </button>
+            </div>
+
+            {/* Slot 4: Customers / Bookmark */}
+            {(() => {
+              const active = isActive(`${base}/customers`);
+              return (
+                <Link
+                  href={`${base}/customers`}
+                  className={`ge-nav-tab ${active ? "active" : ""}`}
+                  onClick={() => setShowMore(false)}
+                  aria-label="Customers"
+                >
+                  <div className="ge-nav-icon-wrap">
+                    {/* Bookmark ribbon icon matching slot 4 in image */}
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                    </svg>
+                    {active && <span className="ge-nav-active-dot" />}
+                  </div>
+                  <span className="ge-nav-label">Customers</span>
+                </Link>
+              );
+            })()}
+
+            {/* Slot 5: More / Tools (Circle wrench icon matching slot 5 in image) */}
+            <button
+              type="button"
+              className={`ge-nav-tab ${showMore ? "active" : ""}`}
+              onClick={() => setShowMore(!showMore)}
+              aria-label="All features and settings"
+            >
+              <div className="ge-nav-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M14.7 9.3a2.5 2.5 0 0 0-3.5 0l-3.9 3.9a1 1 0 0 0 0 1.4l1.4 1.4a1 1 0 0 0 1.4 0l3.9-3.9a2.5 2.5 0 0 0 0-3.5" />
+                  <line x1="9" y1="15" x2="11" y2="17" />
+                </svg>
+                {showMore && <span className="ge-nav-active-dot" />}
+              </div>
+              <span className="ge-nav-label">More</span>
+            </button>
+          </nav>
         </div>
-      </nav>
+      </div>
 
       {/* More menu bottom sheet / full-screen drawer */}
       {showMore && (
