@@ -1126,4 +1126,551 @@ html, body {
   text-decoration: underline;
 }
 
+/* ================================================================
+   Desktop SaaS ERP Showcase Layout (Matching MobiCore Reference)
+   ================================================================ */
+
+.ge-erp-auth-shell {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  background-color: #CBD5E1; /* Satin metallic gray base */
+  background-image: url("/auth-backdrop.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
+.ge-erp-auth-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.25) 0%, rgba(15, 23, 42, 0.4) 100%);
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+
+.ge-erp-auth-main {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+@media (max-width: 640px) {
+  .ge-erp-auth-main {
+    padding: 0;
+  }
+}
+
+.ge-erp-auth-viewport {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The Grand 2-Column Curved Modal Card */
+.ge-erp-auth-card {
+  width: 100%;
+  max-width: 1140px;
+  background-color: #0284C7; /* Primary vibrant electric blue matching reference */
+  background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+  border-radius: 36px;
+  box-shadow: 0 25px 60px -15px rgba(2, 132, 199, 0.45), 0 10px 30px rgba(0, 0, 0, 0.25);
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  overflow: hidden;
+  position: relative;
+  min-height: 640px;
+}
+
+@media (max-width: 992px) {
+  .ge-erp-auth-card {
+    grid-template-columns: 1fr;
+    border-radius: 0;
+    min-height: 100vh;
+    border: none;
+  }
+}
+
+/* LEFT COLUMN: Showcase Panel */
+.ge-erp-showcase-panel {
+  padding: 44px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: #FFFFFF;
+}
+
+@media (max-width: 992px) {
+  .ge-erp-showcase-panel {
+    display: none; /* Mobile focuses directly on clean form */
+  }
+}
+
+/* Brand header */
+.ge-erp-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ge-erp-logo-container {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: #FFFFFF;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  flex-shrink: 0;
+}
+
+.ge-erp-brand-logo {
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.ge-erp-brand-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+  line-height: 1.1;
+}
+
+.ge-erp-brand-tagline {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.85;
+  color: #E0F2FE;
+}
+
+/* Description paragraph */
+.ge-erp-description-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ge-erp-main-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  opacity: 0.95;
+  color: #F0F9FF;
+  font-weight: 500;
+}
+
+.ge-erp-sub-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  opacity: 0.8;
+  color: #BAE6FD;
+}
+
+/* 3D Ledger Artwork */
+.ge-erp-artwork-wrap {
+  width: 100%;
+  max-width: 440px;
+  margin: 6px 0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ge-erp-artwork-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* Social Proof */
+.ge-erp-social-proof {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ge-erp-proof-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #E0F2FE;
+  letter-spacing: 0.02em;
+}
+
+.ge-erp-proof-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ge-erp-avatar-stack {
+  display: flex;
+  align-items: center;
+}
+
+.ge-erp-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #0284C7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-left: -8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.ge-erp-avatar:first-child {
+  margin-left: 0;
+}
+
+.ge-erp-stars-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ge-erp-stars {
+  color: #FBBF24;
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+
+.ge-erp-rating-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+/* Key Modules 5-tile row */
+.ge-erp-modules-section {
+  margin-top: auto;
+}
+
+.ge-erp-modules-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #BAE6FD;
+  margin-bottom: 8px;
+}
+
+.ge-erp-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.ge-erp-module-tile {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #0284C7;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease;
+}
+
+.ge-erp-module-tile:hover {
+  transform: translateY(-2px);
+}
+
+.ge-erp-module-tile-highlight {
+  background: #FFFFFF;
+  border: 1.5px solid #38BDF8;
+}
+
+.ge-erp-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284C7;
+}
+
+.ge-erp-tile-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0F172A;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* RIGHT COLUMN: White Elevated Form Card */
+.ge-erp-form-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 36px 36px 20px;
+}
+
+@media (max-width: 992px) {
+  .ge-erp-form-container {
+    padding: 24px 16px;
+    min-height: 100vh;
+  }
+}
+
+.ge-erp-form-box {
+  background: #FFFFFF;
+  border-radius: 28px;
+  width: 100%;
+  max-width: 440px;
+  padding: 40px 36px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 640px) {
+  .ge-erp-form-box {
+    padding: 32px 20px;
+    border-radius: 24px;
+  }
+}
+
+.ge-erp-form-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.ge-erp-form-welcome {
+  font-size: 13px;
+  color: #64748B;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.ge-erp-form-welcome strong {
+  color: #0284C7;
+  font-weight: 700;
+}
+
+.ge-erp-form-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.ge-erp-form-switch-top {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 12px;
+}
+
+.ge-erp-no-account {
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.ge-erp-switch-link-top {
+  color: #0284C7;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ge-erp-switch-link-top:hover {
+  text-decoration: underline;
+}
+
+/* Error banner */
+.ge-erp-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+/* Form controls */
+.ge-erp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ge-erp-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ge-erp-input-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.ge-erp-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ge-erp-input {
+  width: 100%;
+  height: 48px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-size: 14px;
+  color: #0F172A;
+  outline: none;
+  background: #FFFFFF;
+  transition: all 0.2s ease;
+}
+
+.ge-erp-input:focus {
+  border-color: #0284C7;
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+}
+
+.ge-erp-input::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+.ge-erp-eye-btn {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.ge-erp-eye-btn:hover {
+  color: #0284C7;
+}
+
+/* Forgot password link */
+.ge-erp-forgot-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -8px;
+}
+
+.ge-erp-forgot-link {
+  font-size: 12px;
+  color: #0284C7;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ge-erp-forgot-link:hover {
+  text-decoration: underline;
+}
+
+/* Submit Blue Button */
+.ge-erp-submit-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 10px;
+  background: #0284C7; /* Solid vibrant blue from reference */
+  color: #FFFFFF;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 6px;
+}
+
+.ge-erp-submit-btn:hover:not(:disabled) {
+  background: #0369A1;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
+  transform: translateY(-1px);
+}
+
+.ge-erp-submit-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ge-erp-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ge-erp-loading-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ge-erp-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: ge-spin 0.7s linear infinite;
+}
+
+/* Mobile switch footer */
+.ge-erp-mobile-switch {
+  display: none;
+  text-align: center;
+  font-size: 13px;
+  color: #64748B;
+  margin-top: 24px;
+}
+
+@media (max-width: 992px) {
+  .ge-erp-mobile-switch {
+    display: block;
+  }
+}
+
+.ge-erp-mobile-switch-link {
+  color: #0284C7;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+
 
