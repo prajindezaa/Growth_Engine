@@ -1,43 +1,20 @@
-const CACHE_NAME = "ge-v1";
-const STATIC_ASSETS = ["/", "/app"];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
+// Service worker self-destruct to clear corrupt caches and unregister
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+      .then(() => self.registration.unregister())
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
+// Network-only fallback without caching to avoid ERR_FAILED
 self.addEventListener("fetch", (event) => {
-  const { request } = event;
-
-  // API calls: network-first
-  if (request.url.includes("/api/") || request.url.includes("supabase")) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
-
-  // Static assets: cache-first
-  event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request))
-  );
+  event.respondWith(fetch(event.request));
 });
+
