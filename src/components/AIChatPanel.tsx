@@ -595,13 +595,110 @@ export default function AIChatPanel({ businessId }: { businessId: string }) {
                           textTransform: "uppercase",
                           color: "var(--ge-accent)",
                           marginBottom: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
                         }}
                       >
-                        Action Proposed
+                        <span>⚡ Action Proposed</span>
+                        {msg.action.high_risk && (
+                          <span style={{ color: "var(--danger)", fontSize: "0.7rem", fontWeight: 700 }}>
+                            (High Value Approval)
+                          </span>
+                        )}
                       </div>
-                      <div style={{ fontSize: "0.875rem", color: "var(--ge-text-primary)", marginBottom: "8px" }}>
+                      <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--ge-text-primary)", marginBottom: "8px" }}>
                         {msg.action.confirm_message}
                       </div>
+
+                      {/* Structured Preview Breakdown */}
+                      {msg.action.preview && (
+                        <div
+                          style={{
+                            background: "var(--ge-bg-secondary)",
+                            padding: "10px 12px",
+                            borderRadius: "var(--radius-sm)",
+                            border: "1px solid var(--border-subtle)",
+                            fontSize: "0.8125rem",
+                            marginBottom: "10px",
+                          }}
+                        >
+                          {/* Quotation Preview */}
+                          {msg.action.action_type === "create_quotation" && (
+                            <div>
+                              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginBottom: "4px" }}>
+                                Customer: <strong style={{ color: "var(--text-primary)" }}>{String((msg.action.preview as any).customer?.name || "")}</strong>
+                              </div>
+                              {Array.isArray((msg.action.preview as any).items) && (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "6px" }}>
+                                  {((msg.action.preview as any).items as any[]).map((it, idx) => (
+                                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", color: "var(--text-secondary)" }}>
+                                      <span>{it.quantity}x {it.product_name}</span>
+                                      <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>₹{Number(it.line_total).toLocaleString("en-IN")}</span>
+                                    </div>
+                                  ))}
+                                  <div style={{ borderTop: "1px solid var(--border-subtle)", marginTop: "6px", paddingTop: "6px", display: "flex", justifyContent: "space-between", fontWeight: 700, color: "var(--primary)" }}>
+                                    <span>Grand Total</span>
+                                    <span>₹{Number((msg.action.preview as any).grand_total).toLocaleString("en-IN")}</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Payment Preview */}
+                          {msg.action.action_type === "record_payment" && (
+                            <div>
+                              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                                Customer: <strong style={{ color: "var(--text-primary)" }}>{String((msg.action.preview as any).customer?.name || "")}</strong>
+                              </div>
+                              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginTop: "2px" }}>
+                                Invoice: <strong style={{ color: "var(--text-primary)" }}>{String((msg.action.preview as any).invoice?.invoice_number || "")}</strong>
+                              </div>
+                              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px", fontWeight: 700, color: "var(--primary)" }}>
+                                <span>Payment Amount ({String((msg.action.preview as any).method || "cash").toUpperCase()})</span>
+                                <span>₹{Number((msg.action.preview as any).amount || 0).toLocaleString("en-IN")}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* WhatsApp Invoice Preview */}
+                          {msg.action.action_type === "send_invoice" && (
+                            <div>
+                              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                                Recipient: <strong style={{ color: "var(--text-primary)" }}>{String((msg.action.preview as any).customer?.name || "")}</strong>
+                              </div>
+                              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginTop: "2px" }}>
+                                Invoice: <strong style={{ color: "var(--text-primary)" }}>{String((msg.action.preview as any).invoice?.invoice_number || "")}</strong> (₹{Number((msg.action.preview as any).invoice?.grand_total || 0).toLocaleString("en-IN")})
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* High-risk amount confirmation safety input */}
+                      {msg.actionStatus === "pending" && msg.action.high_risk && (
+                        <div style={{ marginBottom: "10px" }}>
+                          <label style={{ display: "block", fontSize: "0.75rem", color: "var(--danger)", fontWeight: 600, marginBottom: "4px" }}>
+                            Type the exact amount ({String((msg.action.preview as any).amount || "")}) to verify:
+                          </label>
+                          <input
+                            type="text"
+                            value={confirmAmount}
+                            onChange={(e) => setConfirmAmount(e.target.value)}
+                            placeholder={String((msg.action.preview as any).amount || "")}
+                            style={{
+                              width: "100%",
+                              padding: "6px 10px",
+                              borderRadius: "var(--radius-sm)",
+                              border: "1px solid var(--border-subtle)",
+                              background: "var(--bg-primary)",
+                              color: "var(--text-primary)",
+                              fontSize: "0.8125rem",
+                            }}
+                          />
+                        </div>
+                      )}
 
                       {msg.actionStatus === "pending" && (
                         <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
