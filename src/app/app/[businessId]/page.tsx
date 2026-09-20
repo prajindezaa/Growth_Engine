@@ -84,7 +84,7 @@ export default function DashboardPage() {
   const maxTrend = Math.max(...trend.map((t) => t.total), 1);
 
   return (
-    <div style={{ padding: "32px 40px" }}>
+    <div style={{ padding: "clamp(16px, 4vw, 32px) clamp(16px, 4vw, 40px)" }}>
       {/* Header */}
       <div className="ge-page-header ge-animate-in">
         <div>
@@ -94,7 +94,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Top metrics */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px", marginBottom: "24px" }}>
         <MetricCard label="Today's Sales" value={stats.today_sales} prefix="₹" format
           sub={salesComparison ? `${Number(salesComparison) >= 0 ? "↑" : "↓"} ${Math.abs(Number(salesComparison))}% vs avg` : "—"}
           subColor={Number(salesComparison || 0) >= 0 ? "var(--ge-success)" : "var(--ge-error)"}
@@ -112,7 +112,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick links */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px", marginBottom: "24px" }}>
         <QuickLink href={`/app/${businessId}/customers`} icon="👤" label="Customers" count={stats.total_customers} />
         <QuickLink href={`/app/${businessId}/suppliers`} icon="🏭" label="Suppliers" count={stats.total_suppliers} />
         <QuickLink href={`/app/${businessId}/products`} icon="📦" label="Products" count={stats.total_products} />
@@ -123,7 +123,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts row */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px", marginBottom: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginBottom: "24px" }}>
         {/* Sales trend */}
         <div className="ge-metric-card" style={{ padding: "20px" }}>
           <h3 style={{ fontSize: "var(--ge-text-sm)", fontWeight: 600, color: "var(--ge-text-primary)", marginBottom: "16px" }}>Sales Trend <span style={{ color: "var(--ge-text-muted)", fontWeight: 400 }}>· 30 days</span></h3>
@@ -181,7 +181,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Outstanding tables */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
         <OutstandingTable title="Customer Receivable" rows={custOutstanding} linkBase={`/app/${businessId}/customers`} emptyMsg="No outstanding receivables" type="danger" />
         <OutstandingTable title="Supplier Payable" rows={suppOutstanding} linkBase={`/app/${businessId}/suppliers`} emptyMsg="No outstanding payables" type="warning" />
       </div>

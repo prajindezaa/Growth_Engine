@@ -8,6 +8,7 @@ import AIChatPanel from "@/components/AIChatPanel";
 import NotificationCenter from "@/components/NotificationCenter";
 import ThemeToggle from "@/components/ThemeToggle";
 import { ToastProvider } from "@/components/Toast";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 export default async function BusinessLayout({
   children,
@@ -61,8 +62,9 @@ export default async function BusinessLayout({
 
   return (
     <div style={{ display: "flex", flex: 1 }}>
-      {/* Sidebar */}
+      {/* Sidebar (hidden on mobile via CSS) */}
       <aside
+        className="ge-desktop-sidebar"
         style={{
           width: "240px",
           borderRight: "1px solid var(--ge-border)",
@@ -199,12 +201,15 @@ export default async function BusinessLayout({
       </aside>
 
       {/* Content */}
-      <div style={{ flex: 1, overflow: "auto" }}>
+      <div className="ge-main-content" style={{ flex: 1, overflow: "auto" }}>
         <ToastProvider>{children}</ToastProvider>
       </div>
 
       {/* AI Chat */}
       <AIChatPanel businessId={businessId} />
+
+      {/* Mobile Bottom Nav */}
+      <MobileBottomNav businessId={businessId} onAIClick={() => {}} />
     </div>
   );
 }

@@ -151,7 +151,7 @@ export default function AIChatPanel({ businessId }: { businessId: string }) {
   return (
     <>
       {/* AI Orb Button */}
-      <button onClick={() => setIsOpen(!isOpen)} className={isOpen ? "" : "ge-ai-orb"} style={{
+      <button onClick={() => setIsOpen(!isOpen)} className={`ge-ai-orb-wrap ${isOpen ? "" : "ge-ai-orb"}`} style={{
         position: "fixed", bottom: "24px", right: "24px", zIndex: 1000,
         width: "56px", height: "56px", borderRadius: "50%",
         background: isOpen ? "var(--ge-bg-elevated)" : undefined,
@@ -164,7 +164,7 @@ export default function AIChatPanel({ businessId }: { businessId: string }) {
       </button>
 
       {/* Chat Panel */}
-      <div style={{
+      <div className="ge-ai-panel" style={{
         position: "fixed", bottom: "92px", right: "24px", zIndex: 999,
         width: "440px", maxHeight: "640px",
         background: "var(--ge-bg-card)", border: "1px solid var(--ge-border)",
