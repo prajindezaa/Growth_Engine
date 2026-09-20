@@ -134,7 +134,7 @@ export default function AIChatPanel({ businessId }: { businessId: string }) {
   }, [isOpen, businessId]);
 
   // Streaming text effect
-  const streamText = useCallback((fullText: string, msgIndex: number) => {
+  const streamText = useCallback((fullText: string) => {
     let i = 0;
     const speed = Math.max(8, Math.min(25, 2000 / fullText.length));
     const interval = setInterval(() => {
@@ -142,14 +142,18 @@ export default function AIChatPanel({ businessId }: { businessId: string }) {
       if (i >= fullText.length) {
         clearInterval(interval);
         setMessages((prev) => {
+          if (prev.length === 0) return prev;
           const copy = [...prev];
-          copy[msgIndex] = { ...copy[msgIndex], content: fullText, streaming: false };
+          const lastIdx = copy.length - 1;
+          copy[lastIdx] = { ...copy[lastIdx], content: fullText, streaming: false };
           return copy;
         });
       } else {
         setMessages((prev) => {
+          if (prev.length === 0) return prev;
           const copy = [...prev];
-          copy[msgIndex] = { ...copy[msgIndex], content: fullText.slice(0, i), streaming: true };
+          const lastIdx = copy.length - 1;
+          copy[lastIdx] = { ...copy[lastIdx], content: fullText.slice(0, i), streaming: true };
           return copy;
         });
       }
@@ -205,7 +209,7 @@ export default function AIChatPanel({ businessId }: { businessId: string }) {
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-      streamText(answerText, msgIndex);
+      streamText(answerText);
     } catch {
       setMessages((prev) => [
         ...prev,

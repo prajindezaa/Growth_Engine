@@ -401,23 +401,40 @@ ACTION RULES:
         }
 
         functionResponses.push({
-          name: fc.name!,
-          response: { result: JSON.stringify(result) },
+          functionResponse: {
+            name: fc.name!,
+            response: { output: result },
+          },
         });
       }
 
-      const followUp = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: [
-          { role: "user", parts: [{ text: question }] },
-          { role: "model", parts: functionCalls },
-          { role: "user", parts: functionResponses.map((fr) => ({ functionResponse: fr })) },
-        ],
-        config: { systemInstruction: systemPrompt },
-      });
+      try {
+        const followUp = await ai.models.generateContent({
+          model: "gemini-3.6-flash",
+          contents: [
+            { role: "user", parts: [{ text: question }] },
+            { role: "model", parts: functionCalls },
+            { role: "user", parts: functionResponses },
+          ],
+          config: { systemInstruction: systemPrompt },
+        });
 
-      finalText = followUp.candidates?.[0]?.content?.parts?.map((p) => p.text).filter(Boolean).join("") ||
-        "I processed the data but couldn't generate a summary.";
+        const followUpText = followUp.candidates?.[0]?.content?.parts?.map((p) => p.text).filter(Boolean).join("");
+        if (followUpText) {
+          finalText = followUpText;
+        } else if (pendingAction) {
+          finalText = pendingAction.confirm_message || "I have prepared the requested action. Please review and confirm below:";
+        } else {
+          finalText = "Here are the details based on your request:";
+        }
+      } catch (genErr) {
+        console.warn("Follow-up generateContent error:", genErr);
+        if (pendingAction) {
+          finalText = pendingAction.confirm_message || "I have prepared the requested action. Please review and confirm below:";
+        } else {
+          finalText = "Action prepared based on your request:";
+        }
+      }
     } else {
       finalText = parts.map((p) => p.text).filter(Boolean).join("") ||
         "I'm not sure how to answer that with the data I have access to.";
