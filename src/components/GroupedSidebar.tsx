@@ -783,48 +783,71 @@ export default function GroupedSidebar({
             )}
           </div>
         )}
+      </div>
 
-        {/* Upgrade to Pro Card matching Daftra reference */}
+      {/* Pinned Bottom Area: Upgrade to Pro Banner + User Menu */}
+      <div
+        style={{
+          padding: "14px 16px 12px 16px",
+          borderTop: "1px solid var(--border-subtle, #E2E8F0)",
+          backgroundColor: "var(--bg-card, #FFFFFF)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          flexShrink: 0,
+        }}
+      >
+        {/* Full-width, prominent Pro Access Card directly inside the User Box area */}
         <div
           style={{
-            marginTop: "16px",
-            background: "linear-gradient(145deg, #18181B 0%, #09090B 100%)",
+            width: "100%",
+            background: "linear-gradient(135deg, #18181B 0%, #09090B 100%)",
             borderRadius: "14px",
-            padding: "16px",
+            padding: "14px 16px",
             color: "#FFFFFF",
-            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            boxShadow: "0 6px 20px rgba(0, 0, 0, 0.22)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
             position: "relative",
             overflow: "hidden",
           }}
         >
+          {/* Subtle Burgundy Glow */}
           <div
             style={{
               position: "absolute",
-              top: "-20px",
-              right: "-20px",
-              width: "70px",
-              height: "70px",
+              top: "-15px",
+              right: "-15px",
+              width: "60px",
+              height: "60px",
               borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(136, 19, 55, 0.4) 0%, transparent 70%)",
+              background: "radial-gradient(circle, rgba(136, 19, 55, 0.45) 0%, transparent 70%)",
               pointerEvents: "none",
             }}
           />
-          <div style={{ fontSize: "13.5px", fontWeight: 700, marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <span>Become a Pro access</span>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+            <span style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "-0.01em" }}>
+              Become a Pro access
+            </span>
+            <span style={{ fontSize: "10px", fontWeight: 700, background: "rgba(255,255,255,0.15)", padding: "1px 6px", borderRadius: "6px" }}>
+              PRO
+            </span>
           </div>
-          <p style={{ fontSize: "11px", color: "#A1A1AA", lineHeight: 1.45, margin: "0 0 12px 0" }}>
-            Unlock exclusive automated GST filings, priority AI Copilot tools, and multi-store analytics.
+
+          <p style={{ fontSize: "11px", color: "#A1A1AA", lineHeight: 1.4, margin: "0 0 10px 0" }}>
+            Automated GST filings, AI Copilot, and unlimited store reports.
           </p>
+
           <Link
             href={`${base}/subscription`}
             style={{
-              display: "inline-flex",
+              display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              gap: "6px",
               width: "100%",
               padding: "7px 12px",
-              borderRadius: "9px",
+              borderRadius: "8px",
               background: "#FFFFFF",
               color: "#09090B",
               fontSize: "12px",
@@ -835,19 +858,12 @@ export default function GroupedSidebar({
             onMouseEnter={(e) => (e.currentTarget.style.background = "#F4F4F5")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "#FFFFFF")}
           >
-            ✦ Upgrade Pro
+            <span>✦</span>
+            <span>Upgrade Pro</span>
           </Link>
         </div>
-      </div>
 
-      {/* Pinned Bottom User Menu */}
-      <div
-        style={{
-          padding: "12px 16px",
-          borderTop: "1px solid var(--border-subtle, #E2E8F0)",
-          backgroundColor: "var(--bg-card, #FFFFFF)",
-        }}
-      >
+        {/* User Profile Trigger */}
         <UserMenu
           userEmail={userEmail}
           userName={userName}
