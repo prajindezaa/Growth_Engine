@@ -167,10 +167,19 @@ export default function AIChatPanel({ businessId }: { businessId: string }) {
     setLoading(true);
 
     try {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: text, businessId }),
+        body: JSON.stringify({
+          question: text,
+          businessId,
+          accessToken: session?.access_token,
+        }),
       });
 
       const data = await res.json();
@@ -183,19 +192,20 @@ export default function AIChatPanel({ businessId }: { businessId: string }) {
         return;
       }
 
+      const answerText = data.answer || data.response || "No response received.";
       const msgIndex = messages.length + 1;
       const assistantMsg: Message = {
         role: "assistant",
         content: "",
-        tools: data.toolsCalled?.map((t: { name: string }) => t.name) || [],
-        duration: data.duration,
+        tools: (data.toolsCalled || data.tools_called)?.map((t: any) => (typeof t === "string" ? t : t.name)) || [],
+        duration: data.duration || data.duration_ms,
         action: data.action || undefined,
         actionStatus: data.action ? "pending" : undefined,
         streaming: true,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-      streamText(data.answer, msgIndex);
+      streamText(answerText, msgIndex);
     } catch {
       setMessages((prev) => [
         ...prev,

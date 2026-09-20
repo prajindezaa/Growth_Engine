@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -322,7 +323,7 @@ export async function POST(req: NextRequest) {
   try {
     const { question, businessId, accessToken } = await req.json();
 
-    if (!question || !businessId || !accessToken) {
+    if (!question || !businessId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -331,10 +332,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "GEMINI_API_KEY not configured. Add it to .env.local" }, { status: 500 });
     }
 
-    // Create authenticated Supabase client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: `Bearer ${accessToken}` } },
-    });
+    // Create authenticated Supabase client via cookie session or accessToken header
+    let supabase;
+    if (accessToken) {
+      supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: `Bearer ${accessToken}` } },
+      });
+    } else {
+      supabase = await createServerClient();
+    }
 
     const ai = new GoogleGenAI({ apiKey });
 
@@ -442,8 +448,11 @@ ACTION RULES:
 
     return NextResponse.json({
       response: finalText,
+      answer: finalText,
       tools_called: toolsCalled.map((t) => t.name),
+      toolsCalled: toolsCalled.map((t) => ({ name: t.name })),
       duration_ms: durationMs,
+      duration: durationMs,
       ...(pendingAction ? { action: pendingAction } : {}),
     });
   } catch (err: unknown) {
