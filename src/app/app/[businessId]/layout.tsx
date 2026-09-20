@@ -209,7 +209,7 @@ export default async function BusinessLayout({
       <AIChatPanel businessId={businessId} />
 
       {/* Mobile Bottom Nav */}
-      <MobileBottomNav businessId={businessId} onAIClick={() => {}} />
+      <MobileBottomNav businessId={businessId} />
     </div>
   );
 }

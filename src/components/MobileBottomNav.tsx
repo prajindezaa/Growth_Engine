@@ -6,10 +6,9 @@ import { useState } from "react";
 
 interface MobileBottomNavProps {
   businessId: string;
-  onAIClick: () => void;
 }
 
-export default function MobileBottomNav({ businessId, onAIClick }: MobileBottomNavProps) {
+export default function MobileBottomNav({ businessId }: MobileBottomNavProps) {
   const pathname = usePathname();
   const [showMore, setShowMore] = useState(false);
 
@@ -44,7 +43,7 @@ export default function MobileBottomNav({ businessId, onAIClick }: MobileBottomN
           {tabs.map((tab) => {
             if (tab.action === "ai") {
               return (
-                <button key="ai" className="ge-mobile-nav-item" onClick={onAIClick}>
+                <button key="ai" className="ge-mobile-nav-item" onClick={() => window.dispatchEvent(new Event("toggle-ai-chat"))}>
                   <span style={{
                     width: "32px", height: "32px", borderRadius: "50%",
                     background: "var(--ge-ai-gradient)", display: "flex",

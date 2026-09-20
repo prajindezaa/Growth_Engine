@@ -44,6 +44,13 @@ export default function AIChatPanel({ businessId }: { businessId: string }) {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Listen for mobile nav AI toggle
+  useEffect(() => {
+    const handler = () => setIsOpen((v) => !v);
+    window.addEventListener("toggle-ai-chat", handler);
+    return () => window.removeEventListener("toggle-ai-chat", handler);
+  }, []);
+
   // Streaming text effect
   const streamText = useCallback((fullText: string, msgIndex: number) => {
     let i = 0;
