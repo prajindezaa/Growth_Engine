@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   ChevronRight,
   LogOut,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -28,6 +29,7 @@ interface MenuItem {
   icon: LucideIcon;
   count?: string;
   danger?: boolean;
+  highlight?: boolean;
   action?: () => void;
 }
 
@@ -38,7 +40,7 @@ interface MenuSection {
 
 export default function MorePage() {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, isSuperAdmin } = useAuth();
 
   const handleLogout = async () => {
     await signOut();
@@ -74,6 +76,17 @@ export default function MorePage() {
     {
       title: "ACCOUNT & SETTINGS",
       items: [
+        ...(isSuperAdmin
+          ? [
+              {
+                label: "Super Admin Control Plane",
+                href: "/admin",
+                icon: ShieldAlert,
+                highlight: true,
+                count: "SUPER",
+              },
+            ]
+          : []),
         { label: "Business Settings & GST", href: "/settings", icon: Settings },
         { label: "Team & Role Permissions", href: "/team", icon: ShieldCheck },
         { label: "Log Out / Switch Account", action: handleLogout, icon: LogOut, danger: true },
@@ -122,10 +135,20 @@ export default function MorePage() {
                   <Link
                     key={item.label}
                     href={item.href!}
-                    className="flex items-center justify-between p-3.5 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition-colors text-slate-800"
+                    className={`flex items-center justify-between p-3.5 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition-colors ${
+                      item.highlight
+                        ? "bg-indigo-50/70 text-indigo-900 font-bold"
+                        : "text-slate-800"
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-slate-100 text-slate-600">
+                      <div
+                        className={`p-2 rounded-xl ${
+                          item.highlight
+                            ? "bg-indigo-600 text-white"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
                         <Icon className="w-4 h-4" />
                       </div>
                       <span className="text-sm font-semibold">{item.label}</span>
@@ -133,7 +156,13 @@ export default function MorePage() {
 
                     <div className="flex items-center gap-2">
                       {item.count ? (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                            item.highlight
+                              ? "bg-indigo-600 text-white"
+                              : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
                           {item.count}
                         </span>
                       ) : null}

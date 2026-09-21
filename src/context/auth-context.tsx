@@ -36,6 +36,7 @@ interface AuthContextType {
   membership: BusinessMember | null;
   role: BusinessMember["role"] | null;
   hasBusiness: boolean;
+  isSuperAdmin: boolean;
   refreshBusiness: () => Promise<boolean>;
   sendEmailOtp: (email: string) => Promise<{ error: Error | null }>;
   verifyEmailOtp: (email: string, token: string) => Promise<{ data: any; error: Error | null }>;
@@ -51,6 +52,7 @@ const AuthContext = createContext<AuthContextType>({
   membership: null,
   role: null,
   hasBusiness: false,
+  isSuperAdmin: false,
   refreshBusiness: async () => false,
   sendEmailOtp: async () => ({ error: null }),
   verifyEmailOtp: async () => ({ data: null, error: null }),
@@ -66,6 +68,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState<Business | null>(null);
   const [membership, setMembership] = useState<BusinessMember | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  const checkAdminStatus = async (accessToken?: string) => {
+    try {
+      if (!accessToken) {
+        setIsSuperAdmin(false);
+        return;
+      }
+      const res = await fetch("/api/admin/check-auth", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsSuperAdmin(data.authorized === true);
+      } else {
+        setIsSuperAdmin(false);
+      }
+    } catch {
+      setIsSuperAdmin(false);
+    }
+  };
 
   const fetchBusinessContext = async (currentUserId: string, currentAccessToken?: string): Promise<boolean> => {
     try {
@@ -73,6 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (currentAccessToken) {
         headers["Authorization"] = `Bearer ${currentAccessToken}`;
       }
+
+      // Check admin status in parallel
+      checkAdminStatus(currentAccessToken);
 
       // Query server route to reliably get business status with authorization
       const res = await fetch(
@@ -198,6 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setBusiness(null);
       setMembership(null);
+      setIsSuperAdmin(false);
     }
   };
 
@@ -223,6 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setBusiness(null);
         setMembership(null);
+        setIsSuperAdmin(false);
       }
       setLoading(false);
     });
@@ -242,6 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         membership,
         role: membership?.role ?? null,
         hasBusiness: !!business,
+        isSuperAdmin,
         refreshBusiness,
         sendEmailOtp,
         verifyEmailOtp,
