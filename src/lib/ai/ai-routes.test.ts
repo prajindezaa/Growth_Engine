@@ -41,10 +41,12 @@ async function runTests() {
   console.log("--- 1. Testing Sales & Revenue Intent Mapping (EN / TA / Tanglish) ---");
   const salesEn = detectIntentLocally("How much did I sell today?");
   const salesTa = detectIntentLocally("இன்னைக்கு எவ்வளவு சேல்ஸ்?");
+  const salesTaVoice = detectIntentLocally("இன்னைக்கு சேல்ஸ் எவ்வளோ");
   const salesTang = detectIntentLocally("innaiku evalo sales?");
 
   assert(salesEn.route === "today_sales", "English 'How much did I sell today?' -> today_sales");
   assert(salesTa.route === "today_sales", "Tamil 'இன்னைக்கு எவ்வளவு சேல்ஸ்?' -> today_sales");
+  assert(salesTaVoice.route === "today_sales", "Tamil Voice 'இன்னைக்கு சேல்ஸ் எவ்வளோ' -> today_sales");
   assert(salesTang.route === "today_sales", "Tanglish 'innaiku evalo sales?' -> today_sales");
 
   const salesRes = await executeRoute(salesEn.route);

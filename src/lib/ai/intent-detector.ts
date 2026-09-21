@@ -243,7 +243,9 @@ export function detectIntentLocally(input: string, context?: { lastMentionedInvo
   // A) SALES & REVENUE (READ-ONLY)
   // ============================================================
   if (
-    /how\s+much\s+did\s+i\s+sell\s+today|today'?s\s+sales|today\s+sales|இன்னைக்கு\s+எவ்வளவு\s+சேல்ஸ்|innaiku\s+evalo\s+sales|today\s+collection/i.test(lower)
+    /how\s+much\s+did\s+i\s+sell\s+today|today'?s\s+sales|today\s+sales|today\s+collection/i.test(lower) ||
+    /(இன்னைக்கு|இன்று|innaiku).*(சேல்ஸ்|விற்பனை|sales|collection)/i.test(lower) ||
+    /(சேல்ஸ்|விற்பனை|sales).*(இன்னைக்கு|இன்று|innaiku|எவ்வள[வு|ோ]|evalo|evvalavu)/i.test(lower)
   ) {
     return { route: "today_sales", params: {} };
   }
@@ -549,92 +551,104 @@ export function detectIntentLocally(input: string, context?: { lastMentionedInvo
   // CONVERSATIONAL & KEYWORD-BASED CATCH-ALLS FOR NATURAL SPEECH
   // ============================================================
   // Sales / Revenue keywords
-  if (/\b(sale|sales|selling|revenue|turnover|வியாபாரம்|விற்பனை|kolekshan|collection)\b/i.test(lower)) {
-    if (/\b(month|week|period|this month|monthly)\b/i.test(lower)) {
+  if (
+    /\b(sale|sales|selling|revenue|turnover|kolekshan|collection)\b/i.test(lower) ||
+    /(வியாபாரம்|விற்பனை|சேல்ஸ்)/i.test(lower)
+  ) {
+    if (/\b(month|week|period|monthly)\b|மாத/i.test(lower)) {
       return { route: "sales_by_period", params: {} };
     }
-    if (/\b(trend|growth|growing)\b/i.test(lower)) {
+    if (/\b(trend|growth|growing)\b|வளர்/i.test(lower)) {
       return { route: "sales_trend", params: {} };
     }
-    if (/\b(top|best|highest|item|items)\b/i.test(lower)) {
+    if (/\b(top|best|highest|item|items)\b|அதிகம்/i.test(lower)) {
       return { route: "top_products", params: {} };
     }
     return { route: "today_sales", params: {} };
   }
 
   // Khata / Outstanding / Due / Receivables / Udhar keywords
-  if (/\b(khata|udhar|jama|due|dues|owes|owing|outstanding|receivable|receivables|balance|பாக்கி|கடல்)\b/i.test(lower)) {
-    if (/\b(supplier|vendor|payables?|tharanum)\b/i.test(lower)) {
+  if (
+    /\b(khata|udhar|jama|due|dues|owes|owing|outstanding|receivable|receivables|balance)\b/i.test(lower) ||
+    /(பாக்கி|கடன்|வசூல்)/i.test(lower)
+  ) {
+    if (/\b(supplier|vendor|payables?|tharanum)\b|சப்ளையர்/i.test(lower)) {
       return { route: "supplier_payables", params: {} };
     }
-    if (/\b(overdue|late|crossed)\b/i.test(lower)) {
+    if (/\b(overdue|late|crossed)\b|தாமதம்|லேட்/i.test(lower)) {
       return { route: "overdue_only", params: {} };
     }
     return { route: "total_outstanding", params: {} };
   }
 
   // Inventory / Stock / Products keywords
-  if (/\b(stock|inventory|item|items|product|products|goods|சரக்கு|இருப்பு)\b/i.test(lower)) {
-    if (/\b(low|reorder|shortage|kuraiva|koraiva)\b/i.test(lower)) {
+  if (
+    /\b(stock|inventory|item|items|product|products|goods)\b/i.test(lower) ||
+    /(சரக்கு|இருப்பு|பொருள்|ப்ராடக்ட்)/i.test(lower)
+  ) {
+    if (/\b(low|reorder|shortage|kuraiva|koraiva)\b|குறைவ/i.test(lower)) {
       return { route: "low_stock", params: {} };
     }
-    if (/\b(out|zero|empty|mudinjiducha)\b/i.test(lower)) {
+    if (/\b(out|zero|empty|mudinjiducha)\b|முடிஞ்சி/i.test(lower)) {
       return { route: "out_of_stock", params: {} };
     }
-    if (/\b(value|worth|valuation|cost)\b/i.test(lower)) {
+    if (/\b(value|worth|valuation|cost)\b|மதிப்பு|விலை/i.test(lower)) {
       return { route: "inventory_value", params: {} };
     }
     return { route: "low_stock", params: {} };
   }
 
   // Invoice / Bill / Billing keywords
-  if (/\b(invoice|invoices|bill|bills|billing|ரசீது|பில்)\b/i.test(lower)) {
-    if (/\b(create|make|generate|podu|new)\b/i.test(lower)) {
+  if (
+    /\b(invoice|invoices|bill|bills|billing)\b/i.test(lower) ||
+    /(ரசீது|பில்|இன்வாய்ஸ்)/i.test(lower)
+  ) {
+    if (/\b(create|make|generate|podu|new)\b|போடு|உருவாக்கு|புது/i.test(lower)) {
       return { route: "create_invoice", params: { customer: "Ravi Traders" } };
     }
     return { route: "app_help_navigation", params: { section: "invoices" } };
   }
 
   // POS / Counter keywords
-  if (/\b(pos|counter|cashier|fast billing)\b/i.test(lower)) {
+  if (/\b(pos|counter|cashier|fast billing)\b|கவுண்டர்/i.test(lower)) {
     return { route: "app_help_navigation", params: { section: "pos" } };
   }
 
   // Reports / Profit / Margin / GST keywords
-  if (/\b(profit|margin|earnings|gain|லாபம்)\b/i.test(lower)) {
+  if (/\b(profit|margin|earnings|gain)\b|லாபம்/i.test(lower)) {
     return { route: "profit_margin", params: {} };
   }
-  if (/\b(gst|gstin|tax|taxes|gstr|வரி)\b/i.test(lower)) {
-    if (/\b(my|number|business|store|details|what)\b/i.test(lower)) {
+  if (/\b(gst|gstin|tax|taxes|gstr)\b|வரி|ஜிஎஸ்டி/i.test(lower)) {
+    if (/\b(my|number|business|store|details|what)\b|கடை|என்/i.test(lower)) {
       return { route: "my_business_info", params: {} };
     }
     return { route: "gst_summary", params: {} };
   }
-  if (/\b(report|reports|summary|analytics|performance)\b/i.test(lower)) {
+  if (/\b(report|reports|summary|analytics|performance)\b|அறிக்கை|சுருக்கம்/i.test(lower)) {
     return { route: "report_summary", params: {} };
   }
 
   // Account / Profile / Business / Plan / Settings keywords
-  if (/\b(account|profile|user|login|owner|அக்கவுன்ட்)\b/i.test(lower)) {
+  if (/\b(account|profile|user|login|owner)\b|அக்கவுன்ட்|சுயவிவரம்/i.test(lower)) {
     return { route: "my_account_info", params: {} };
   }
-  if (/\b(business|shop|store|company|enterprise|கடை)\b/i.test(lower)) {
+  if (/\b(business|shop|store|company|enterprise)\b|கடை|நிறுவனம்/i.test(lower)) {
     return { route: "my_business_info", params: {} };
   }
-  if (/\b(plan|subscription|limit|tier|renew|renews|upgrade)\b/i.test(lower)) {
+  if (/\b(plan|subscription|limit|tier|renew|renews|upgrade)\b|பிளான்|சந்தா/i.test(lower)) {
     return { route: "my_plan_subscription", params: {} };
   }
-  if (/\b(setting|settings|configuration|setup)\b/i.test(lower)) {
+  if (/\b(setting|settings|configuration|setup)\b|அமைப்புகள்|செட்டிங்/i.test(lower)) {
     return { route: "app_help_navigation", params: { section: "settings" } };
   }
 
   // Date / Time / Calendar / Today keywords
-  if (/\b(date|today|time|calendar|day|தேதி|இன்னைக்கு|innaiku)\b/i.test(lower)) {
+  if (/\b(date|today|time|calendar|day|innaiku)\b|தேதி|இன்னைக்கு|இன்று|நேரம்/i.test(lower)) {
     return { route: "current_date_time", params: {} };
   }
 
   // Help / Guide / Ask / What can you do / Orientation
-  if (/\b(help|guide|can you|support|assist|how to|who are you|உதவி)\b/i.test(lower)) {
+  if (/\b(help|guide|can you|support|assist|how to|who are you)\b|உதவி|வழிகாட்ட/i.test(lower)) {
     return { route: "capability_check", params: {} };
   }
 
