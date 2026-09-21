@@ -1,182 +1,102 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
-import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/context/auth-context";
 import {
-  Smartphone,
   Mail,
-  Lock,
+  Smartphone,
   ArrowRight,
   ShieldCheck,
-  Sparkles,
-  Store,
-  CheckCircle2,
-  ChevronRight,
-  RefreshCw,
   Building2,
-  QrCode,
-  Layers,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { success, error, toast } = useToast();
+  const { error: showError, success: showSuccess } = useToast();
+  const { user, business, sendEmailOtp, signInWithGoogle, loading } = useAuth();
 
-  const [authMode, setAuthMode] = useState<"phone" | "email">("phone");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [otpSent, setOtpSent] = useState(false);
-  const [resendTimer, setResendTimer] = useState(30);
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // OTP Countdown timer
+  // If already authenticated and has a business, redirect straight to dashboard
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (otpSent && resendTimer > 0) {
-      interval = setInterval(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [otpSent, resendTimer]);
-
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanPhone = phone.replace(/\D/g, "");
-    if (!cleanPhone || cleanPhone.length < 10) {
-      error("Please enter a valid 10-digit mobile number");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const formattedPhone = cleanPhone.startsWith("91") ? `+${cleanPhone}` : `+91${cleanPhone}`;
-      const { error: otpErr } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
-      });
-
-      if (otpErr) {
-        // If SMS provider not active or rate limited, notify and enable mock OTP for demonstration
-        toast(`Demo OTP mode active: check SMS or use code 123456`, "info");
+    if (!loading && user) {
+      if (business) {
+        router.replace("/");
       } else {
-        success(`6-digit OTP sent to +91 ${cleanPhone}`);
+        router.replace("/onboarding");
       }
-      setOtpSent(true);
-      setResendTimer(30);
-    } catch (err: any) {
-      error(err.message || "Failed to send OTP");
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [user, business, loading, router]);
 
-  const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) {
-      value = value[value.length - 1];
-    }
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    // Auto-focus next box
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-input-${index + 1}`);
-      nextInput?.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-input-${index - 1}`);
-      prevInput?.focus();
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  // Handle Continue with Email (Email OTP)
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const enteredOtp = otp.join("");
-    if (enteredOtp.length < 6) {
-      error("Please enter all 6 digits of the verification code");
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.replace(/\D/g, "");
+
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      showError("Please enter a valid business email address");
       return;
     }
 
-    setIsLoading(true);
+    setIsSending(true);
     try {
-      const cleanPhone = phone.replace(/\D/g, "");
-      const formattedPhone = cleanPhone.startsWith("91") ? `+${cleanPhone}` : `+91${cleanPhone}`;
-      
-      const { data, error: verifyErr } = await supabase.auth.verifyOtp({
-        phone: formattedPhone,
-        token: enteredOtp,
-        type: "sms",
-      });
+      // Store phone number temporarily in sessionStorage for business onboarding
+      if (typeof window !== "undefined" && cleanPhone) {
+        sessionStorage.setItem("ge_temp_phone", cleanPhone);
+      }
 
-      if (verifyErr) {
-        // If demo OTP or verification error, check fallback demo user
-        if (enteredOtp === "123456" || enteredOtp === "000000") {
-          success("Store credentials verified (Demo bypass)!");
-          router.push("/");
-          return;
-        }
-        error(verifyErr.message || "Invalid OTP code");
+      const { error } = await sendEmailOtp(cleanEmail);
+      if (error) {
+        showError(error.message || "Failed to send verification code. Please try again.");
         return;
       }
 
-      success("Store credentials verified!");
-      router.push("/");
+      showSuccess(`Verification code sent to ${cleanEmail}`);
+      const encodedEmail = encodeURIComponent(cleanEmail);
+      const encodedPhone = encodeURIComponent(cleanPhone);
+      router.push(`/auth/verify?email=${encodedEmail}&phone=${encodedPhone}`);
     } catch (err: any) {
-      error(err.message || "Verification failed");
+      showError(err.message || "Something went wrong sending OTP");
     } finally {
-      setIsLoading(false);
+      setIsSending(false);
     }
   };
 
-  const handlePasswordLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      error("Please enter both email and password");
-      return;
+  // Handle Continue with Google
+  const handleGoogleSubmit = async () => {
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (typeof window !== "undefined" && cleanPhone) {
+      sessionStorage.setItem("ge_temp_phone", cleanPhone);
     }
 
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     try {
-      const { data, error: signinErr } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (signinErr) {
-        error(signinErr.message || "Invalid email or password");
-        return;
+      const { error } = await signInWithGoogle();
+      if (error) {
+        showError(error.message || "Failed to initiate Google login");
+        setIsGoogleLoading(false);
       }
-
-      success("Welcome back to GrowthEngine!");
-      router.push("/");
     } catch (err: any) {
-      error(err.message || "Login failed");
-    } finally {
-      setIsLoading(false);
+      showError(err.message || "Google login error");
+      setIsGoogleLoading(false);
     }
-  };
-
-  const handleInstantDemo = (role: "owner" | "cashier") => {
-    success(`Logging in as ${role === "owner" ? "Store Owner" : "Cashier"} (Demo Mode)`);
-    router.push("/");
   };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
-      
-      {/* Top Mobile-App Status & Branding Bar */}
-      <header className="px-5 py-4 flex items-center justify-between max-w-5xl mx-auto w-full border-b border-slate-200/60 bg-white/70 backdrop-blur-md sticky top-0 z-20">
+      {/* Top Branding Bar */}
+      <header className="px-5 py-4 flex items-center justify-between max-w-5xl mx-auto w-full border-b border-slate-200/60 bg-white/80 backdrop-blur-md sticky top-0 z-20">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-2xl bg-[#4F46E5] flex items-center justify-center text-white font-black text-lg shadow-sm shadow-indigo-500/20">
             G
@@ -196,49 +116,37 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Quick Demo Selector */}
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => handleInstantDemo("owner")}
-            className="text-xs font-semibold text-[#4F46E5] bg-indigo-50 hover:bg-indigo-100/80 px-3 py-1.5 rounded-xl border border-indigo-200/60 transition-all active:scale-95 flex items-center gap-1"
-          >
-            <span>Demo Store</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+          <span className="hidden sm:inline">Need assistance?</span>
+          <span className="text-[#4F46E5] font-semibold">24/7 Support</span>
         </div>
       </header>
 
-      {/* Main Center Form Canvas */}
+      {/* Main Form Center Canvas */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 my-auto">
         <div className="max-w-md w-full">
-          
           <Card className="p-6 sm:p-8 shadow-xl shadow-slate-200/50 border-slate-200/80 rounded-3xl bg-white/95 backdrop-blur-xs relative overflow-hidden">
-            
-            {/* Subtle brand top accent */}
-            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-[#4F46E5] via-[#7C3AED] to-[#4F46E5]" />
+            {/* Top brand gradient accent */}
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#4F46E5] via-[#7C3AED] to-[#4F46E5]" />
 
-            {/* Title & Subtitle */}
+            {/* Header */}
             <div className="mb-6">
               <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                {otpSent ? "Enter Verification Code" : "Sign in to your Business"}
+                Sign in to GrowthEngine
               </h2>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                {otpSent
-                  ? `We've sent a 6-digit SMS code to +91 ${phone}`
-                  : "Instant access to POS billing, Khata ledgers, and your AI Employee"}
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                Enter your credentials to access POS billing, Khata ledgers, and your AI Employee.
               </p>
             </div>
 
-            {/* Google Login Button */}
+            {/* Google OAuth Button */}
             <button
               type="button"
-              onClick={() => {
-                success("Connecting via Google...");
-                router.push("/");
-              }}
-              className="w-full h-12 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold shadow-2xs flex items-center justify-center gap-3 transition-all active:scale-[0.98] mb-5"
+              onClick={handleGoogleSubmit}
+              disabled={isGoogleLoading || isSending}
+              className="w-full h-12 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold shadow-2xs flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-60"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
@@ -256,252 +164,88 @@ export default function LoginPage() {
                   d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
                 />
               </svg>
-              <span>Continue with Google</span>
+              <span>{isGoogleLoading ? "Connecting to Google..." : "Continue with Google"}</span>
             </button>
 
-            {/* Divider */}
-            <div className="relative my-4">
+            {/* Visual Divider */}
+            <div className="relative my-5">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-slate-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-slate-400 font-semibold tracking-wider">
-                  or sign in with
+                <span className="bg-white px-2.5 text-slate-400 font-semibold tracking-wider">
+                  or continue with email
                 </span>
               </div>
             </div>
 
-            {/* Auth Mode Segmented Pill */}
-            {!otpSent && (
-              <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl mb-6 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setAuthMode("phone")}
-                  className={`py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all ${
-                    authMode === "phone"
-                      ? "bg-white text-slate-900 shadow-sm font-bold"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>Mobile OTP (+91)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAuthMode("email")}
-                  className={`py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all ${
-                    authMode === "email"
-                      ? "bg-white text-slate-900 shadow-sm font-bold"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  <Mail className="w-3.5 h-3.5" />
-                  <span>Email & Password</span>
-                </button>
-              </div>
-            )}
-
-            {/* Phone OTP Flow */}
-            {authMode === "phone" ? (
-              !otpSent ? (
-                /* Step 1: Phone Input */
-                <form onSubmit={handlePhoneSubmit} className="space-y-4">
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
-                      Business Phone Number
-                    </label>
-                    <div className="relative flex items-center">
-                      <div className="absolute left-3.5 flex items-center gap-1.5 text-slate-600 font-bold text-sm pointer-events-none border-r border-slate-200 pr-2">
-                        <span>🇮🇳</span>
-                        <span>+91</span>
-                      </div>
-                      <input
-                        type="tel"
-                        maxLength={10}
-                        placeholder="98401 23456"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                        className="w-full h-12 pl-22 pr-4 rounded-xl border border-slate-200 bg-white text-sm font-bold tracking-wide text-slate-900 placeholder:text-slate-400 shadow-2xs focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/15 focus:outline-none transition-all"
-                        required
-                        autoFocus
-                      />
-                    </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">
-                      Works with Airtel, Jio, Vi, and BSNL
-                    </span>
+            {/* Login Form: Mobile Number + Email Address */}
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              {/* 1. Mobile Number Field */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  Mobile Number
+                </label>
+                <div className="relative flex items-center">
+                  <div className="absolute left-3.5 flex items-center gap-1.5 text-slate-600 font-bold text-sm pointer-events-none border-r border-slate-200 pr-2.5">
+                    <span>🇮🇳</span>
+                    <span>+91</span>
                   </div>
-
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    className="w-full h-12 font-bold shadow-md shadow-indigo-500/20 active:scale-[0.98]"
-                    isLoading={isLoading}
-                  >
-                    <span>Send Verification Code</span>
-                    <ArrowRight className="w-4 h-4 ml-1.5" />
-                  </Button>
-                </form>
-              ) : (
-                /* Step 2: 6-Digit OTP Box Grid */
-                <form onSubmit={handleVerifyOtp} className="space-y-5 animate-in fade-in duration-200">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        6-Digit Code
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOtpSent(false);
-                          setOtp(["", "", "", "", "", ""]);
-                        }}
-                        className="text-xs text-[#4F46E5] font-semibold hover:underline"
-                      >
-                        Edit Number
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-6 gap-2 sm:gap-2.5">
-                      {otp.map((digit, idx) => (
-                        <input
-                          key={idx}
-                          id={`otp-input-${idx}`}
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={1}
-                          value={digit}
-                          onChange={(e) => handleOtpChange(idx, e.target.value)}
-                          onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                          className="h-13 text-center text-lg font-black text-slate-900 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/15 focus:outline-none transition-all"
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    className="w-full h-12 font-bold shadow-md shadow-indigo-500/20"
-                    isLoading={isLoading}
-                  >
-                    <span>Verify & Open Store</span>
-                    <CheckCircle2 className="w-4 h-4 ml-1.5" />
-                  </Button>
-
-                  {/* Resend Code Countdown */}
-                  <div className="text-center">
-                    {resendTimer > 0 ? (
-                      <span className="text-xs text-slate-400">
-                        Resend code in <strong className="text-slate-600">{resendTimer}s</strong>
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setResendTimer(30);
-                          success(`New OTP sent to +91 ${phone}`);
-                        }}
-                        className="text-xs font-bold text-[#4F46E5] hover:underline inline-flex items-center gap-1"
-                      >
-                        <RefreshCw className="w-3 h-3" />
-                        <span>Resend SMS Code</span>
-                      </button>
-                    )}
-                  </div>
-                </form>
-              )
-            ) : (
-              /* Email & Password Flow */
-              <form onSubmit={handlePasswordLogin} className="space-y-4">
-                <Input
-                  label="Owner / Staff Email"
-                  placeholder="owner@srilakshmi.in"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  leftIcon={<Mail className="w-4 h-4" />}
-                  required
-                />
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Password
-                    </label>
-                    <Link
-                      href="/forgot-password"
-                      className="text-xs font-semibold text-[#4F46E5] hover:underline"
-                    >
-                      Forgot?
-                    </Link>
-                  </div>
-                  <Input
-                    placeholder="••••••••"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    leftIcon={<Lock className="w-4 h-4" />}
-                    required
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="98401 23456"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                    className="w-full h-12 pl-22 pr-4 rounded-xl border border-slate-200 bg-white text-sm font-semibold tracking-wide text-slate-900 placeholder:text-slate-400 shadow-2xs focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/15 focus:outline-none transition-all"
                   />
                 </div>
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Used for account profile and WhatsApp billing receipts
+                </span>
+              </div>
 
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="w-full h-12 font-bold shadow-md shadow-indigo-500/20"
-                  isLoading={isLoading}
-                >
-                  <span>Sign In</span>
-                  <ArrowRight className="w-4 h-4 ml-1.5" />
-                </Button>
-              </form>
-            )}
+              {/* 2. Email Address Field */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  Email Address *
+                </label>
+                <div className="relative flex items-center">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="email"
+                    placeholder="owner@yourbusiness.in"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full h-12 pl-10 pr-4 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-900 placeholder:text-slate-400 shadow-2xs focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/15 focus:outline-none transition-all"
+                  />
+                </div>
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  We'll email you a secure 6-digit one-time passcode (OTP)
+                </span>
+              </div>
 
-            {/* Quick Demo Login Cards */}
-            <div className="mt-6 pt-5 border-t border-slate-100">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 text-center">
-                Or Instant Preview (No signup required)
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleInstantDemo("owner")}
-                  className="p-2.5 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40 text-left transition-all active:scale-95 group"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Store className="w-3.5 h-3.5 text-[#4F46E5]" />
-                    <span className="text-xs font-bold text-slate-800">Owner Access</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 block mt-0.5 truncate">
-                    Sri Lakshmi Enterprises
-                  </span>
-                </button>
+              {/* 3. Continue with Email Button */}
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full h-12 font-bold shadow-md shadow-indigo-500/20 active:scale-[0.98] mt-2"
+                isLoading={isSending}
+              >
+                <span>Continue with Email</span>
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </form>
 
-                <button
-                  type="button"
-                  onClick={() => handleInstantDemo("cashier")}
-                  className="p-2.5 rounded-xl border border-slate-200 hover:border-amber-300 hover:bg-amber-50/40 text-left transition-all active:scale-95 group"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <QrCode className="w-3.5 h-3.5 text-amber-600" />
-                    <span className="text-xs font-bold text-slate-800">Counter POS</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 block mt-0.5 truncate">
-                    Cashier Terminal 01
-                  </span>
-                </button>
+            {/* Information Callout */}
+            <div className="mt-5 p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100/80 text-xs text-indigo-900/90 flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-[#4F46E5] shrink-0 mt-0.5" />
+              <div className="text-[11px] leading-relaxed">
+                <strong>Passwordless & Secure:</strong> No passwords to remember. You will receive an instant 6-digit OTP code directly to your email inbox.
               </div>
             </div>
-
-            {/* Bottom Register CTA */}
-            <div className="mt-5 text-center text-xs text-slate-500">
-              <span>New to GrowthEngine? </span>
-              <Link href="/onboarding" className="font-bold text-[#4F46E5] hover:underline">
-                Register New Business
-              </Link>
-            </div>
-
           </Card>
-
         </div>
       </main>
 
@@ -509,10 +253,9 @@ export default function LoginPage() {
       <footer className="py-4 px-5 text-center safe-bottom">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-200/80 text-[11px] font-medium text-slate-500 shadow-2xs">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Postgres Row-Level Security • 100% Isolated MSME Data</span>
+          <span>Supabase Auth • Postgres Row-Level Security • 100% Isolated MSME Data</span>
         </div>
       </footer>
-
     </div>
   );
 }

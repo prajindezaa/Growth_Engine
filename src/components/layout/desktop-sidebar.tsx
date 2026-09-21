@@ -22,8 +22,10 @@ import {
   Bell,
   Settings,
   ShieldCheck,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
 
 interface DesktopSidebarProps {
   onOpenAI: () => void;
@@ -31,6 +33,7 @@ interface DesktopSidebarProps {
 
 export function DesktopSidebar({ onOpenAI }: DesktopSidebarProps) {
   const pathname = usePathname();
+  const { business, signOut } = useAuth();
 
   const groups = [
     {
@@ -43,39 +46,55 @@ export function DesktopSidebar({ onOpenAI }: DesktopSidebarProps) {
     {
       label: "SALES",
       items: [
+        { label: "POS Billing", href: "/pos", icon: ShoppingCart },
+        { label: "Tax Invoices", href: "/invoices", icon: Receipt },
+        { label: "Sales Orders", href: "/sales-orders", icon: ShoppingBag },
         { label: "Quotations", href: "/quotations", icon: FileText },
-        { label: "Orders", href: "/sales-orders", icon: ShoppingBag },
-        { label: "Invoices", href: "/invoices", icon: Receipt },
-        { label: "POS Terminal", href: "/pos", icon: ShoppingCart },
-        { label: "Customers", href: "/customers", icon: Users },
+        { label: "Customers (Parties)", href: "/customers", icon: Users },
       ],
     },
     {
-      label: "SUPPLY",
+      label: "PURCHASE & INVENTORY",
       items: [
-        { label: "Purchases", href: "/purchases", icon: Truck },
-        { label: "Suppliers", href: "/suppliers", icon: Users },
-        { label: "Products", href: "/products", icon: Package },
-        { label: "Inventory", href: "/inventory", icon: Boxes },
+        { label: "Products Catalog", href: "/products", icon: Package },
+        { label: "Stock Ledger", href: "/inventory", icon: Boxes },
+        { label: "Suppliers & Vendors", href: "/suppliers", icon: Truck },
+        { label: "Purchase Orders", href: "/purchases", icon: ShoppingBag },
       ],
     },
     {
-      label: "MONEY",
+      label: "PAYMENTS & KHATA",
       items: [
-        { label: "Payments", href: "/payments", icon: CreditCard },
-        { label: "Khata (Outstanding)", href: "/khata", icon: BookOpen },
-        { label: "Reports", href: "/reports", icon: BarChart3 },
+        { label: "Khata Credit Ledger", href: "/khata", icon: BookOpen },
+        { label: "Payments (Cash/UPI)", href: "/payments", icon: CreditCard },
       ],
     },
     {
-      label: "OPERATIONS",
+      label: "BUSINESS INTELLIGENCE",
       items: [
+        { label: "Financial Reports", href: "/reports", icon: BarChart3 },
+        { label: "Approvals & Tasks", href: "/approvals", icon: CheckCheck },
         { label: "Automations", href: "/automations", icon: Bot },
-        { label: "Approvals", href: "/approvals", icon: CheckCheck },
-        { label: "Notifications", href: "/notifications", icon: Bell },
+        { label: "Activity & Alerts", href: "/notifications", icon: Bell },
+      ],
+    },
+    {
+      label: "PREFERENCES",
+      items: [
+        { label: "Store Settings", href: "/settings", icon: Settings },
+        { label: "Team & Roles", href: "/team", icon: ShieldCheck },
       ],
     },
   ];
+
+  const businessName = business?.name || "GrowthEngine Store";
+  const businessInitials = businessName
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  const gstinDisplay = business?.gstin ? `GST: ${business.gstin}` : "MSME Verified";
 
   return (
     <aside className="hidden sm:flex flex-col w-[260px] h-screen bg-white border-r border-slate-200/90 shrink-0 select-none">
@@ -155,18 +174,22 @@ export function DesktopSidebar({ onOpenAI }: DesktopSidebarProps) {
       {/* Pinned Bottom User & Store */}
       <div className="p-3 border-t border-slate-100 bg-slate-50/60">
         <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 text-[#4F46E5] font-bold text-xs flex items-center justify-center">
-            SL
+          <div className="w-8 h-8 rounded-lg bg-indigo-100 text-[#4F46E5] font-bold text-xs flex items-center justify-center shrink-0">
+            {businessInitials || "GE"}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-slate-800 truncate">
-              Sri Lakshmi Enterprises
+              {businessName}
             </p>
-            <p className="text-[10px] text-slate-500 truncate">GST: 33AABCS1429B1ZB</p>
+            <p className="text-[10px] text-slate-500 truncate">{gstinDisplay}</p>
           </div>
-          <Link href="/settings" className="text-slate-400 hover:text-slate-600">
-            <Settings className="w-4 h-4" />
-          </Link>
+          <button
+            onClick={() => signOut()}
+            title="Sign out"
+            className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </aside>

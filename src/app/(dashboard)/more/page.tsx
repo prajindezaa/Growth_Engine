@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Users,
   Package,
@@ -19,13 +20,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/context/auth-context";
 
 interface MenuItem {
   label: string;
-  href: string;
+  href?: string;
   icon: LucideIcon;
   count?: string;
   danger?: boolean;
+  action?: () => void;
 }
 
 interface MenuSection {
@@ -34,6 +37,14 @@ interface MenuSection {
 }
 
 export default function MorePage() {
+  const router = useRouter();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    router.replace("/login");
+  };
+
   const sections: MenuSection[] = [
     {
       title: "SALES & COMMERCE",
@@ -65,7 +76,7 @@ export default function MorePage() {
       items: [
         { label: "Business Settings & GST", href: "/settings", icon: Settings },
         { label: "Team & Role Permissions", href: "/team", icon: ShieldCheck },
-        { label: "Log Out / Switch Account", href: "/login", icon: LogOut, danger: true },
+        { label: "Log Out / Switch Account", action: handleLogout, icon: LogOut, danger: true },
       ],
     },
   ];
@@ -88,20 +99,33 @@ export default function MorePage() {
             <Card className="p-1 divide-y divide-slate-100">
               {sec.items.map((item) => {
                 const Icon = item.icon;
+
+                if (item.action) {
+                  return (
+                    <button
+                      key={item.label}
+                      onClick={item.action}
+                      className="w-full flex items-center justify-between p-3.5 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition-colors text-rose-600 font-medium text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-rose-50 text-rose-600">
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm font-semibold">{item.label}</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    </button>
+                  );
+                }
+
                 return (
                   <Link
                     key={item.label}
-                    href={item.href}
-                    className={`flex items-center justify-between p-3.5 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition-colors ${
-                      item.danger ? "text-rose-600 font-medium" : "text-slate-800"
-                    }`}
+                    href={item.href!}
+                    className="flex items-center justify-between p-3.5 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition-colors text-slate-800"
                   >
                     <div className="flex items-center gap-3">
-                      <div
-                        className={`p-2 rounded-xl ${
-                          item.danger ? "bg-rose-50 text-rose-600" : "bg-slate-100 text-slate-600"
-                        }`}
-                      >
+                      <div className="p-2 rounded-xl bg-slate-100 text-slate-600">
                         <Icon className="w-4 h-4" />
                       </div>
                       <span className="text-sm font-semibold">{item.label}</span>

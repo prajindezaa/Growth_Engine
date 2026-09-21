@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/context/auth-context";
+import { supabase } from "@/lib/supabase/client";
 import {
   Building2,
   Receipt,
@@ -14,30 +16,69 @@ import {
   Smartphone,
   Save,
   CheckCircle2,
+  LogOut,
 } from "lucide-react";
 
 export default function SettingsPage() {
-  const { success } = useToast();
+  const { success, error } = useToast();
+  const { business, refreshBusiness, signOut } = useAuth();
 
-  const [businessName, setBusinessName] = useState("Sri Lakshmi Enterprises");
-  const [gstin, setGstin] = useState("33AABCS1429B1ZB");
-  const [phone, setPhone] = useState("98401 23456");
-  const [email, setEmail] = useState("billing@srilakshmi.in");
-  const [address, setAddress] = useState("142, Cross Cut Road, Gandhipuram");
-  const [city, setCity] = useState("Coimbatore");
-  const [state, setState] = useState("Tamil Nadu");
-  const [pincode, setPincode] = useState("641012");
+  const [businessName, setBusinessName] = useState("");
+  const [gstin, setGstin] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [pincode, setPincode] = useState("");
   const [invoicePrefix, setInvoicePrefix] = useState("INV-2026-");
-  const [upiId, setUpiId] = useState("srilakshmi@okaxis");
+  const [upiId, setUpiId] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (business) {
+      setBusinessName(business.name || "");
+      setGstin(business.gstin || "");
+      setPhone(business.phone || "");
+      setEmail(business.email || "");
+      setAddress(business.address || "");
+      setCity(business.city || "");
+      setState(business.state || "");
+    }
+  }, [business]);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    success("Business & Invoice settings saved successfully!");
+    if (!business?.id) return;
+
+    setIsSaving(true);
+    try {
+      const { error: updateErr } = await supabase
+        .from("businesses")
+        .update({
+          name: businessName,
+          gstin: gstin || null,
+          phone: phone,
+          email: email || null,
+          address: address || null,
+          city: city,
+          state: state,
+        })
+        .eq("id", business.id);
+
+      if (updateErr) throw updateErr;
+
+      await refreshBusiness();
+      success("Business & Invoice settings saved successfully!");
+    } catch (err: any) {
+      error(err.message || "Failed to update settings");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <div className="space-y-5 animate-in fade-in duration-300">
-      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -45,18 +86,28 @@ export default function SettingsPage() {
             Business Settings
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            GSTIN credentials, UPI payment QR details, and thermal invoice preferences
+            GSTIN credentials, UPI payment QR details, and invoice preferences
           </p>
         </div>
 
-        <Button onClick={handleSave} className="self-start sm:self-auto font-semibold">
-          <Save className="w-4 h-4 mr-2" />
-          <span>Save Changes</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleSave} isLoading={isSaving} className="font-semibold">
+            <Save className="w-4 h-4 mr-2" />
+            <span>Save Changes</span>
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => signOut()}
+            className="text-rose-600 hover:bg-rose-50 border-rose-200 font-semibold"
+          >
+            <LogOut className="w-4 h-4 mr-1.5" />
+            <span>Sign Out</span>
+          </Button>
+        </div>
       </div>
 
       <form onSubmit={handleSave} className="space-y-4">
-        
         {/* Business Profile */}
         <Card className="space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
@@ -72,10 +123,9 @@ export default function SettingsPage() {
               required
             />
             <Input
-              label="GSTIN Identification Number *"
+              label="GSTIN Number (Optional)"
               value={gstin}
-              onChange={(e) => setGstin(e.target.value)}
-              required
+              onChange={(e) => setGstin(e.target.value.toUpperCase())}
             />
           </div>
 
@@ -99,10 +149,9 @@ export default function SettingsPage() {
             onChange={(e) => setAddress(e.target.value)}
           />
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} />
             <Input label="State" value={state} onChange={(e) => setState(e.target.value)} />
-            <Input label="PIN Code" value={pincode} onChange={(e) => setPincode(e.target.value)} />
           </div>
         </Card>
 
@@ -128,9 +177,7 @@ export default function SettingsPage() {
             />
           </div>
         </Card>
-
       </form>
-
     </div>
   );
 }

@@ -1,15 +1,51 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DesktopSidebar } from "@/components/layout/desktop-sidebar";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { AIOrb } from "@/components/ai/ai-orb";
 import { AIChatPanel } from "@/components/ai/ai-chat-panel";
 import { useAIEmployee } from "@/hooks/use-ai-employee";
-import { Bell, Store, ChevronDown } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+import { Bell, Store, ChevronDown, Sparkles } from "lucide-react";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const ai = useAIEmployee();
+  const { user, business, loading } = useAuth();
+
+  // Route Protection Guard
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.replace("/login");
+      } else if (!business) {
+        router.replace("/onboarding");
+      }
+    }
+  }, [user, business, loading, router]);
+
+  // Loading skeleton while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[#4F46E5] mb-4 animate-pulse">
+          <Sparkles className="w-6 h-6" />
+        </div>
+        <div className="text-sm font-bold text-slate-800">Opening GrowthEngine...</div>
+        <div className="text-xs text-slate-400 mt-1">Verifying secure session</div>
+      </div>
+    );
+  }
+
+  // If unauthenticated or without business, return empty while redirect completes
+  if (!user || !business) {
+    return null;
+  }
+
+  const businessDisplayName = business.name || "My Business";
+  const locationText = business.city ? `${business.city} Store • Active` : "Active";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col sm:flex-row antialiased">
@@ -18,16 +54,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 pb-20 sm:pb-6">
-        {/* Top Orientation Bar (Clean, uncluttered, orientation only) */}
+        {/* Top Orientation Bar */}
         <header className="h-14 sm:h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 bg-slate-100 px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-800">
               <Store className="w-3.5 h-3.5 text-[#4F46E5]" />
-              <span className="truncate max-w-[150px] sm:max-w-none">Sri Lakshmi Enterprises</span>
+              <span className="truncate max-w-[150px] sm:max-w-none">{businessDisplayName}</span>
               <ChevronDown className="w-3 h-3 text-slate-400" />
             </div>
             <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 hidden sm:inline">
-              Coimbatore Store • Active
+              {locationText}
             </span>
           </div>
 

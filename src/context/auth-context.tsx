@@ -16,8 +16,8 @@ export interface Business {
   address?: string;
   currency: string;
   logo_url?: string;
-  invoice_sequence: number;
-  plan: string;
+  invoice_sequence?: number;
+  plan?: string;
 }
 
 export interface BusinessMember {
@@ -35,7 +35,11 @@ interface AuthContextType {
   business: Business | null;
   membership: BusinessMember | null;
   role: BusinessMember["role"] | null;
-  refreshBusiness: () => Promise<void>;
+  hasBusiness: boolean;
+  refreshBusiness: () => Promise<boolean>;
+  sendEmailOtp: (email: string) => Promise<{ error: Error | null }>;
+  verifyEmailOtp: (email: string, token: string) => Promise<{ data: any; error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -46,7 +50,11 @@ const AuthContext = createContext<AuthContextType>({
   business: null,
   membership: null,
   role: null,
-  refreshBusiness: async () => {},
+  hasBusiness: false,
+  refreshBusiness: async () => false,
+  sendEmailOtp: async () => ({ error: null }),
+  verifyEmailOtp: async () => ({ data: null, error: null }),
+  signInWithGoogle: async () => ({ error: null }),
   signOut: async () => {},
 });
 
@@ -59,10 +67,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [business, setBusiness] = useState<Business | null>(null);
   const [membership, setMembership] = useState<BusinessMember | null>(null);
 
-  const fetchBusinessContext = async (currentUserId: string) => {
+  const fetchBusinessContext = async (currentUserId: string, currentAccessToken?: string): Promise<boolean> => {
     try {
-      // 1. Get active membership
-      const { data: memberData, error: memberErr } = await supabase
+      const headers: Record<string, string> = {};
+      if (currentAccessToken) {
+        headers["Authorization"] = `Bearer ${currentAccessToken}`;
+      }
+
+      // Query server route to reliably get business status with authorization
+      const res = await fetch(
+        `/api/auth/profile-status?userId=${encodeURIComponent(currentUserId)}`,
+        { headers }
+      );
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.hasBusiness && json.business) {
+          setBusiness(json.business as Business);
+          setMembership(json.membership as BusinessMember);
+          return true;
+        }
+      }
+
+      // Fallback: client Supabase query if RLS allows
+      const { data: memberData } = await supabase
         .from("business_members")
         .select("*")
         .eq("user_id", currentUserId)
@@ -70,66 +98,118 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .limit(1)
         .maybeSingle();
 
-      if (memberErr || !memberData) {
-        // Check if there is an unattached or default business we can attach or fallback to
-        const { data: bizList } = await supabase.from("businesses").select("*").limit(1);
-        if (bizList && bizList.length > 0) {
-          setBusiness(bizList[0] as Business);
-          setMembership({
-            id: "fallback-member",
-            business_id: bizList[0].id,
-            user_id: currentUserId,
-            role: "owner",
-            status: "active",
-          });
-        } else {
-          setBusiness(null);
-          setMembership(null);
+      if (memberData) {
+        setMembership(memberData as BusinessMember);
+        const { data: bizData } = await supabase
+          .from("businesses")
+          .select("*")
+          .eq("id", memberData.business_id)
+          .single();
+
+        if (bizData) {
+          setBusiness(bizData as Business);
+          return true;
         }
-        return;
       }
 
-      setMembership(memberData as BusinessMember);
-
-      // 2. Fetch business details
-      const { data: bizData, error: bizErr } = await supabase
-        .from("businesses")
-        .select("*")
-        .eq("id", memberData.business_id)
-        .single();
-
-      if (!bizErr && bizData) {
-        setBusiness(bizData as Business);
-      }
+      setBusiness(null);
+      setMembership(null);
+      return false;
     } catch (err) {
       console.error("Error fetching business context:", err);
+      setBusiness(null);
+      setMembership(null);
+      return false;
     }
   };
 
-  const refreshBusiness = async () => {
+  const refreshBusiness = async (): Promise<boolean> => {
     if (user) {
-      await fetchBusinessContext(user.id);
+      return await fetchBusinessContext(user.id, session?.access_token);
+    }
+    return false;
+  };
+
+  const sendEmailOtp = async (emailToVerify: string) => {
+    try {
+      const cleanEmail = emailToVerify.trim().toLowerCase();
+      const { error } = await supabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          shouldCreateUser: true,
+        },
+      });
+      return { error };
+    } catch (err: any) {
+      return { error: err };
+    }
+  };
+
+  const verifyEmailOtp = async (emailToVerify: string, token: string) => {
+    try {
+      const cleanEmail = emailToVerify.trim().toLowerCase();
+      const cleanToken = token.trim();
+      const res = await supabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanToken,
+        type: "email",
+      });
+      if (!res.error && res.data?.user) {
+        setUser(res.data.user);
+        setSession(res.data.session);
+        await fetchBusinessContext(res.data.user.id, res.data.session?.access_token);
+      }
+      return { data: res.data, error: res.error };
+    } catch (err: any) {
+      return { data: null, error: err };
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      const redirectUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/auth/callback`
+          : "/auth/callback";
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
+      });
+      return { error };
+    } catch (err: any) {
+      return { error: err };
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setBusiness(null);
-    setMembership(null);
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn("Sign out err:", e);
+    } finally {
+      setUser(null);
+      setSession(null);
+      setBusiness(null);
+      setMembership(null);
+    }
   };
 
   useEffect(() => {
     // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchBusinessContext(session.user.id).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
+        await fetchBusinessContext(session.user.id, session.access_token);
       }
+      setLoading(false);
     });
 
     // Auth state listener
@@ -139,7 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchBusinessContext(session.user.id);
+        await fetchBusinessContext(session.user.id, session.access_token);
       } else {
         setBusiness(null);
         setMembership(null);
@@ -161,7 +241,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         business,
         membership,
         role: membership?.role ?? null,
+        hasBusiness: !!business,
         refreshBusiness,
+        sendEmailOtp,
+        verifyEmailOtp,
+        signInWithGoogle,
         signOut,
       }}
     >
