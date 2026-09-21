@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --primary: #4F46E5;
+    --primary-hover: #4338CA;
+    --success: #16A34A;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --ai-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
+    
+    /* Surfaces */
+    --bg-canvas: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --border: #E2E8F0;
+    --text-primary: #0F172A;
+    --text-muted: #64748B;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    user-select: auto;
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+    overscroll-behavior-y: none;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* AI Gradient utility reserved solely for AI Employee */
+.bg-ai-gradient {
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+}
+
+.text-ai-gradient {
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.border-ai-gradient {
+  border-image: linear-gradient(135deg, #4F46E5, #7C3AED) 1;
+}
+
+/* Native Android/iOS App Scroll and Safe Area utils */
+.safe-top {
+  padding-top: max(12px, env(safe-area-inset-top));
+}
+
+.safe-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* AI Orb breathing animation */
+@keyframes orb-breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px -2px rgba(99, 102, 241, 0.4), 0 0 10px 1px rgba(124, 58, 237, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 28px 2px rgba(99, 102, 241, 0.65), 0 0 16px 4px rgba(124, 58, 237, 0.45);
+  }
+}
+
+@keyframes orb-thinking {
+  0% {
+    transform: scale(1) rotate(0deg);
+    box-shadow: 0 0 24px 2px rgba(99, 102, 241, 0.8);
+  }
+  50% {
+    transform: scale(1.12) rotate(180deg);
+    box-shadow: 0 0 36px 6px rgba(124, 58, 237, 0.9);
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    box-shadow: 0 0 24px 2px rgba(99, 102, 241, 0.8);
+  }
+}
+
+.animate-orb-breathe {
+  animation: orb-breathe 3.2s ease-in-out infinite;
+}
+
+.animate-orb-thinking {
+  animation: orb-thinking 1.2s ease-in-out infinite;
+}
+
+/* Custom Scrollbar for sleek app sheets */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
