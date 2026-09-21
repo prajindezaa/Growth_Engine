@@ -59,11 +59,11 @@
 @keyframes orb-breathe {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 20px -2px rgba(99, 102, 241, 0.4), 0 0 10px 1px rgba(124, 58, 237, 0.3);
+    box-shadow: 0 0 24px -2px rgba(99, 102, 241, 0.45), 0 0 12px 1px rgba(124, 58, 237, 0.35);
   }
   50% {
     transform: scale(1.05);
-    box-shadow: 0 0 28px 2px rgba(99, 102, 241, 0.65), 0 0 16px 4px rgba(124, 58, 237, 0.45);
+    box-shadow: 0 0 32px 3px rgba(99, 102, 241, 0.75), 0 0 20px 6px rgba(124, 58, 237, 0.55);
   }
 }
 
@@ -73,12 +73,30 @@
     box-shadow: 0 0 24px 2px rgba(99, 102, 241, 0.8);
   }
   50% {
-    transform: scale(1.12) rotate(180deg);
-    box-shadow: 0 0 36px 6px rgba(124, 58, 237, 0.9);
+    transform: scale(1.08) rotate(180deg);
+    box-shadow: 0 0 40px 6px rgba(124, 58, 237, 0.95);
   }
   100% {
     transform: scale(1) rotate(360deg);
     box-shadow: 0 0 24px 2px rgba(99, 102, 241, 0.8);
+  }
+}
+
+@keyframes wave-bar {
+  0%, 100% {
+    height: 6px;
+  }
+  50% {
+    height: 22px;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }
 
@@ -89,6 +107,18 @@
 .animate-orb-thinking {
   animation: orb-thinking 1.2s ease-in-out infinite;
 }
+
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.wave-bar-1 { animation: wave-bar 0.9s ease-in-out infinite 0.1s; }
+.wave-bar-2 { animation: wave-bar 0.9s ease-in-out infinite 0.25s; }
+.wave-bar-3 { animation: wave-bar 0.9s ease-in-out infinite 0.4s; }
+.wave-bar-4 { animation: wave-bar 0.9s ease-in-out infinite 0.15s; }
+.wave-bar-5 { animation: wave-bar 0.9s ease-in-out infinite 0.3s; }
 
 /* Custom Scrollbar for sleek app sheets */
 ::-webkit-scrollbar {
