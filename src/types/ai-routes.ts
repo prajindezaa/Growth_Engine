@@ -31,10 +31,13 @@ export type AIRouteId =
   | "create_invoice"
   | "record_payment"
   | "cancel_invoice" // High risk
-  // G) REPORTS
+  // G) REPORTS & EXPORTS
   | "report_summary"
   | "gst_summary"
   | "profit_margin"
+  | "export_report_pdf"
+  | "export_report_excel"
+  | "export_data"
   // H) NOTIFICATIONS & APPROVALS
   | "pending_approvals"
   | "automation_status"

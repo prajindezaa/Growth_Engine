@@ -11,6 +11,7 @@ import { DetailPanel } from "@/components/ui/detail-panel";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import { formatIndianCurrency } from "@/lib/utils";
+import { ExportService } from "@/lib/services/export";
 import {
   Search,
   UserPlus,
@@ -21,6 +22,7 @@ import {
   Calendar,
   AlertCircle,
   Check,
+  Download,
 } from "lucide-react";
 
 export default function CustomersPage() {
@@ -93,13 +95,36 @@ export default function CustomersPage() {
           </p>
         </div>
 
-        <Button
-          onClick={() => setIsAddOpen(true)}
-          className="self-start sm:self-auto font-semibold"
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          <span>Add Customer</span>
-        </Button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const csv = ExportService.generateCSV(customers, [
+                { header: "Party / Customer Name", key: "name" },
+                { header: "Phone", key: "phone" },
+                { header: "City", key: "city" },
+                { header: "GSTIN", key: "gstin" },
+                { header: "Outstanding Balance (₹)", key: "outstandingBalance" },
+                { header: "Credit Limit (₹)", key: "creditLimit" },
+                { header: "Status", key: "status" },
+              ]);
+              ExportService.downloadCSV(csv, `Customers_Directory_${new Date().toISOString().split("T")[0]}`);
+              success("Customers CSV exported!");
+            }}
+            className="font-semibold"
+          >
+            <Download className="w-4 h-4 mr-1.5" />
+            <span>Export CSV</span>
+          </Button>
+
+          <Button
+            onClick={() => setIsAddOpen(true)}
+            className="font-semibold"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            <span>Add Customer</span>
+          </Button>
+        </div>
       </div>
 
       {/* Hero Summary Badge */}

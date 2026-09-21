@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { DetailPanel } from "@/components/ui/detail-panel";
 import { useToast } from "@/components/ui/toast";
 import { formatIndianCurrency } from "@/lib/utils";
+import { ExportService } from "@/lib/services/export";
 import {
   Search,
   Plus,
@@ -20,6 +21,7 @@ import {
   AlertTriangle,
   PlusCircle,
   MinusCircle,
+  Download,
 } from "lucide-react";
 
 export default function ProductsPage() {
@@ -107,10 +109,36 @@ export default function ProductsPage() {
           </p>
         </div>
 
-        <Button onClick={() => setIsAddOpen(true)} className="self-start sm:self-auto font-semibold">
-          <Plus className="w-4 h-4 mr-2" />
-          <span>Add Product</span>
-        </Button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const csv = ExportService.generateCSV(products, [
+                { header: "Product Name", key: "name" },
+                { header: "SKU", key: "sku" },
+                { header: "HSN", key: "hsn" },
+                { header: "Category", key: "category" },
+                { header: "Stock", key: "stock" },
+                { header: "Unit", key: "unit" },
+                { header: "Cost Price (₹)", key: "costPrice" },
+                { header: "Selling Price (₹)", key: "sellingPrice" },
+                { header: "GST Rate (%)", key: "gstRate" },
+                { header: "Status", key: "status" },
+              ]);
+              ExportService.downloadCSV(csv, `Catalog_Products_${new Date().toISOString().split("T")[0]}`);
+              success("Products CSV downloaded!");
+            }}
+            className="font-semibold"
+          >
+            <Download className="w-4 h-4 mr-1.5" />
+            <span>Export CSV</span>
+          </Button>
+
+          <Button onClick={() => setIsAddOpen(true)} className="font-semibold">
+            <Plus className="w-4 h-4 mr-2" />
+            <span>Add Product</span>
+          </Button>
+        </div>
       </div>
 
       {/* Inventory KPI banner */}

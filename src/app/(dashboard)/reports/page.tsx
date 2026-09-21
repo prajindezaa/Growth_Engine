@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { StatsCard } from "@/components/ui/stats-card";
 import { Badge } from "@/components/ui/badge";
 import { formatIndianCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ExportService } from "@/lib/services/export";
 import {
   TrendingUp,
   BarChart3,
@@ -13,6 +15,8 @@ import {
   ArrowDownRight,
   Calendar,
   FileSpreadsheet,
+  Download,
+  Printer,
 } from "lucide-react";
 
 export default function ReportsPage() {
@@ -36,6 +40,15 @@ export default function ReportsPage() {
     netGstPayable: 124120, // To pay in GSTR-3B
   };
 
+  const handleExportCSV = () => {
+    const csv = ExportService.generateCSV(monthlySales, [
+      { header: "Month", key: "month" },
+      { header: "Gross Sales (₹)", key: "sales" },
+      { header: "Gross Profit (₹)", key: "profit" },
+    ]);
+    ExportService.downloadCSV(csv, `GrowthEngine_Financial_Report_${period}_${new Date().toISOString().split("T")[0]}`);
+  };
+
   return (
     <div className="space-y-5 animate-in fade-in duration-300">
       
@@ -50,23 +63,45 @@ export default function ReportsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 self-start sm:self-auto text-xs font-semibold">
-          <button
-            onClick={() => setPeriod("month")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              period === "month" ? "bg-[#4F46E5] text-white shadow-xs" : "text-slate-600"
-            }`}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportCSV}
+            className="font-semibold text-xs h-9"
           >
-            Monthly
-          </button>
-          <button
-            onClick={() => setPeriod("quarter")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              period === "quarter" ? "bg-[#4F46E5] text-white shadow-xs" : "text-slate-600"
-            }`}
+            <Download className="w-3.5 h-3.5 mr-1.5" />
+            <span>Export CSV</span>
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => window.print()}
+            className="font-semibold text-xs h-9"
           >
-            Quarterly
-          </button>
+            <Printer className="w-3.5 h-3.5 mr-1.5" />
+            <span>Print PDF</span>
+          </Button>
+
+          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+            <button
+              onClick={() => setPeriod("month")}
+              className={`px-2.5 py-1 rounded-lg transition-all ${
+                period === "month" ? "bg-[#4F46E5] text-white shadow-xs" : "text-slate-600"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setPeriod("quarter")}
+              className={`px-2.5 py-1 rounded-lg transition-all ${
+                period === "quarter" ? "bg-[#4F46E5] text-white shadow-xs" : "text-slate-600"
+              }`}
+            >
+              Quarterly
+            </button>
+          </div>
         </div>
       </div>
 

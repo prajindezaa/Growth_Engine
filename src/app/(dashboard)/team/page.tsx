@@ -18,7 +18,11 @@ import {
   CheckCircle2,
   Trash2,
   ShieldAlert,
+  Share2,
+  Copy,
+  Check,
 } from "lucide-react";
+import { ExportService } from "@/lib/services/export";
 
 interface TeamMember {
   id: string;
@@ -59,6 +63,7 @@ export default function TeamPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<TeamMember["role"]>("sales");
+  const [activeInviteLink, setActiveInviteLink] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadMembers() {
@@ -75,7 +80,7 @@ export default function TeamPage() {
           setMembers(
             data.map((m) => ({
               id: m.id,
-              name: m.user_id === user?.id ? "You (Active User)" : `Staff Member (${m.role})`,
+              name: m.user_id === user?.id ? `${business?.name || "Store"} (Owner)` : `Staff Member (${m.role})`,
               phone: "Registered User",
               role: m.role,
               status: m.status || "active",
@@ -85,6 +90,8 @@ export default function TeamPage() {
                   ? ["Full Business Access", "Bank & Ledger Accounts", "Approvals", "Tax Filing"]
                   : m.role === "sales"
                   ? ["POS Billing", "Customer Directory", "Draft Quotations"]
+                  : m.role === "accountant"
+                  ? ["Khata Ledgers", "Financial Reports", "Tax Summary"]
                   : ["Staff Member Access"],
             }))
           );
@@ -103,6 +110,10 @@ export default function TeamPage() {
     e.preventDefault();
     if (!name || !phone) return;
 
+    const token = `inv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const inviteUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/invite/${token}?role=${role}&biz=${encodeURIComponent(business?.name || "GrowthEngine")}`;
+    setActiveInviteLink(inviteUrl);
+
     const tempId = `mem_${Date.now()}`;
     const newMem: TeamMember = {
       id: tempId,
@@ -110,7 +121,7 @@ export default function TeamPage() {
       phone,
       role,
       status: "invited",
-      lastActive: "Invitation Sent",
+      lastActive: "Invitation Link Generated",
       permissions:
         role === "sales"
           ? ["POS Billing", "Customer Directory"]
@@ -130,14 +141,13 @@ export default function TeamPage() {
           status: "invited",
         });
       }
-      success(`Invite sent to ${name} (+91 ${phone}) for role: ${role.toUpperCase()}`);
+
+      const inviteMsg = `Vanakkam ${name},\nYou have been invited to join ${business?.name || "GrowthEngine"} as ${role.toUpperCase()}.\nTap your secure activation link to set up your account:\n${inviteUrl}`;
+      window.open(ExportService.getWhatsAppUrl(phone, inviteMsg), "_blank");
+      success(`Invite link generated & WhatsApp opened for ${name}`);
     } catch (err: any) {
       error(err.message || "Failed to invite member");
     }
-
-    setIsAddOpen(false);
-    setName("");
-    setPhone("");
   };
 
   const getRoleBadgeVariant = (role: TeamMember["role"]) => {
@@ -279,6 +289,45 @@ export default function TeamPage() {
               <option value="admin">Administrator (Full Access)</option>
             </select>
           </div>
+
+          {activeInviteLink && (
+            <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Invite Link Active</span>
+              </div>
+              <p className="text-[11px] font-mono text-emerald-900 break-all bg-white p-2 rounded-lg border border-emerald-200">
+                {activeInviteLink}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={() => {
+                    navigator.clipboard.writeText(activeInviteLink);
+                    success("Invite link copied to clipboard!");
+                  }}
+                >
+                  <Copy className="w-3.5 h-3.5 mr-1" />
+                  <span>Copy Link</span>
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                  onClick={() => {
+                    const inviteMsg = `Vanakkam ${name},\nYou have been invited to join ${business?.name || "GrowthEngine"} as ${role.toUpperCase()}.\nTap your secure activation link to set up your account:\n${activeInviteLink}`;
+                    window.open(ExportService.getWhatsAppUrl(phone, inviteMsg), "_blank");
+                  }}
+                >
+                  <Share2 className="w-3.5 h-3.5 mr-1" />
+                  <span>WhatsApp Invite</span>
+                </Button>
+              </div>
+            </div>
+          )}
         </form>
       </DetailPanel>
 

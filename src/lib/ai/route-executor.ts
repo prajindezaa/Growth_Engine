@@ -850,6 +850,107 @@ export async function executeRoute(
       };
     }
 
+    case "export_report_pdf": {
+      if (role === "cashier") {
+        return {
+          route,
+          reply: "Only Managers, Accountants, Admins, and Owners have permission to export financial PDF reports.",
+        };
+      }
+      return {
+        route,
+        reply: "Your comprehensive Monthly Financial & Tax Report (A4 PDF) is ready. You can open and save it directly via the print dialog.",
+        structuredCards: {
+          type: "stats_list",
+          title: "Financial PDF Report Available",
+          items: [
+            {
+              id: "report_pdf_01",
+              title: "Financial & Tax Summary (Sep 2026)",
+              subtitle: "Includes GSTR-3B tax calculations, revenue breakdown, and Khata health",
+              primaryValue: "Ready to Print",
+              badge: { text: "PDF / A4", variant: "primary" },
+              linkHref: "/reports",
+            },
+          ],
+        },
+        offeredNextStep: "Visit the Reports page to trigger the browser Print / PDF export dialog.",
+      };
+    }
+
+    case "export_report_excel": {
+      if (role === "cashier") {
+        return {
+          route,
+          reply: "Only Managers, Accountants, Admins, and Owners have permission to export financial spreadsheets.",
+        };
+      }
+      return {
+        route,
+        reply: "Your Monthly Financial Spreadsheet (CSV/Excel) is generated with sales, profit margins, and turnover records.",
+        structuredCards: {
+          type: "stats_list",
+          title: "Financial Spreadsheet Generated",
+          items: [
+            {
+              id: "report_csv_01",
+              title: "Monthly Revenue & Profit Data (CSV)",
+              subtitle: "Compatible with Excel, Google Sheets, and Tally Prime",
+              primaryValue: "Ready for Download",
+              badge: { text: "CSV / Excel", variant: "success" },
+              linkHref: "/reports",
+            },
+          ],
+        },
+        offeredNextStep: "Tap the link above to download your CSV report immediately.",
+      };
+    }
+
+    case "export_data": {
+      if (role === "cashier" || role === "sales") {
+        return {
+          route,
+          reply: "Data backup and bulk exports are restricted to Business Owners, Admins, and Accountants.",
+        };
+      }
+      const entity = params.entity || "all";
+      return {
+        route,
+        reply: `I have prepared data export options for your ${entity === "all" ? "complete business records" : entity}.`,
+        structuredCards: {
+          type: "stats_list",
+          title: "Available Data Exports",
+          items: [
+            {
+              id: "exp_invoices",
+              title: "Tax Invoices Export (CSV)",
+              subtitle: "All customer bills with HSN, GST, and totals",
+              primaryValue: "Download",
+              badge: { text: "Invoices", variant: "neutral" },
+              linkHref: "/invoices",
+            },
+            {
+              id: "exp_khata",
+              title: "Khata Receivables Ledger (CSV)",
+              subtitle: "Complete customer outstanding and payment records",
+              primaryValue: "Download",
+              badge: { text: "Khata", variant: "warning" },
+              linkHref: "/khata",
+            },
+            {
+              id: "exp_products",
+              title: "Products & Stock Catalog (CSV)",
+              subtitle: "All SKUs, inventory counts, cost & selling prices",
+              primaryValue: "Download",
+              badge: { text: "Inventory", variant: "success" },
+              linkHref: "/products",
+            },
+          ],
+        },
+        offeredNextStep: "Which section would you like to download first?",
+      };
+    }
+
     // ============================================================
     // H) NOTIFICATIONS, AUTOMATION & APPROVALS (read-only + routing)
     // ============================================================

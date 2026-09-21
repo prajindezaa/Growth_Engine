@@ -318,8 +318,31 @@ export function detectIntentLocally(input: string, context?: { lastMentionedInvo
   }
 
   // ============================================================
-  // G) REPORTS (READ-ONLY)
+  // G) REPORTS & EXPORTS (READ-ONLY / DOWNLOAD)
   // ============================================================
+  if (
+    /export.*(pdf|print)|download.*(pdf|report\s+pdf)|send.*(pdf|report\s+pdf)|அறிக்கை\s+பிடிஎப்|report\s+pdf/i.test(lower)
+  ) {
+    return { route: "export_report_pdf", params: {} };
+  }
+
+  if (
+    /export.*(excel|csv|sheet|spreadsheet)|download.*(excel|csv)|அறிக்கை\s+எக்செல்|report\s+excel/i.test(lower)
+  ) {
+    return { route: "export_report_excel", params: {} };
+  }
+
+  if (
+    /export.*(data|backup|records|ledgers)|download.*(all\s+data|customers\s+data|products\s+data)/i.test(lower)
+  ) {
+    let entity = "all";
+    if (/customer/i.test(lower)) entity = "customers";
+    else if (/product|stock/i.test(lower)) entity = "products";
+    else if (/invoice|sales/i.test(lower)) entity = "invoices";
+    else if (/khata|ledger/i.test(lower)) entity = "khata";
+    return { route: "export_data", params: { entity } };
+  }
+
   if (
     /how'?s\s+this\s+month\s+going\s+overall|give\s+me\s+a\s+business\s+summary|business\s+summary|report\s+summary|overall\s+performance|மாத\s+சுருக்கம்/i.test(lower)
   ) {

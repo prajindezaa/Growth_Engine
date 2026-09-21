@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { Supplier, PurchaseRecord } from "@/types/sales";
-import { MOCK_SUPPLIERS, MOCK_PURCHASES } from "@/lib/mock-sales";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,9 @@ import {
   Phone,
   Building2,
   Package,
+  Download,
 } from "lucide-react";
+import { ExportService } from "@/lib/services/export";
 
 import { useSuppliers } from "@/hooks/use-suppliers";
 
@@ -70,10 +71,33 @@ export default function SuppliersPage() {
           </p>
         </div>
 
-        <Button onClick={() => setIsAddOpen(true)} className="self-start sm:self-auto font-semibold">
-          <Plus className="w-4 h-4 mr-2" />
-          <span>Add Supplier</span>
-        </Button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const csv = ExportService.generateCSV(suppliers, [
+                { header: "Supplier / Firm Name", key: "name" },
+                { header: "Contact Person", key: "contactPerson" },
+                { header: "Phone", key: "phone" },
+                { header: "City", key: "city" },
+                { header: "Category", key: "category" },
+                { header: "Outstanding Payable (₹)", key: "outstandingPayable" },
+                { header: "GSTIN", key: "gstin" },
+              ]);
+              ExportService.downloadCSV(csv, `Suppliers_Vendors_${new Date().toISOString().split("T")[0]}`);
+              success("Suppliers CSV exported!");
+            }}
+            className="font-semibold"
+          >
+            <Download className="w-4 h-4 mr-1.5" />
+            <span>Export CSV</span>
+          </Button>
+
+          <Button onClick={() => setIsAddOpen(true)} className="font-semibold">
+            <Plus className="w-4 h-4 mr-2" />
+            <span>Add Supplier</span>
+          </Button>
+        </div>
       </div>
 
       {/* Payables banner */}

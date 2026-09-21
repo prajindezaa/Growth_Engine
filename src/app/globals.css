@@ -39,6 +39,7 @@
 .text-ai-gradient {
   background: linear-gradient(135deg, #4F46E5, #7C3AED);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -128,4 +129,50 @@
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
   border-radius: 9999px;
+}
+
+/* ============================================================
+   A4 PRINT STYLESHEET — TAX INVOICES & REPORTS
+   ============================================================ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide app navigation, sidebar, chat floating panels, and action buttons during print */
+  header,
+  nav,
+  aside,
+  footer,
+  .no-print,
+  button,
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* Expand print-target containers cleanly to full A4 page */
+  .printable-invoice-container {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .print-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }

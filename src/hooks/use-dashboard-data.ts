@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/auth-context";
 import { AnalyticsService, SalesSummary, InventorySummary, KhataSummary } from "@/lib/services/analytics";
-import { MOCK_KHATA_ENTRIES } from "@/lib/mock-data";
 
 export function useDashboardData() {
   const { business } = useAuth();
@@ -69,7 +68,15 @@ export function useDashboardData() {
       lowStockCount: inventory.lowStockCount,
       activeOrdersCount: 6,
     },
-    recentKhata: MOCK_KHATA_ENTRIES,
+    recentKhata: khata.topDebtors.map((d) => ({
+      id: d.id,
+      customerName: d.name,
+      amount: d.outstandingBalance,
+      type: "credit",
+      date: "Recent",
+      dueDate: d.status === "overdue" ? "Immediate" : "Due in 7 days",
+      status: d.status,
+    })),
     topCustomersDue: khata.topDebtors.slice(0, 3),
     criticalProducts: inventory.criticalProducts,
   };

@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { DetailPanel } from "@/components/ui/detail-panel";
 import { useToast } from "@/components/ui/toast";
 import { formatIndianCurrency } from "@/lib/utils";
+import { ExportService } from "@/lib/services/export";
+import { useAuth } from "@/context/auth-context";
 import {
   BookOpen,
   ArrowUpRight,
@@ -20,9 +22,12 @@ import {
   PlusCircle,
   Phone,
   Filter,
+  Download,
+  Share2,
 } from "lucide-react";
 
 export default function KhataPage() {
+  const { business } = useAuth();
   const { customers, totalKhataReceivables, totalOverdueAmount, updateCustomer } = useCustomers();
   const { recordPayment } = usePayments();
   const { success, error } = useToast();
@@ -89,6 +94,26 @@ export default function KhataPage() {
             Credit tracking (உதார் / உளுக்கடை), overdue reminders, and payment collection
           </p>
         </div>
+
+        <Button
+          variant="secondary"
+          onClick={() => {
+            const csv = ExportService.generateCSV(filtered, [
+              { header: "Party Name", key: "name" },
+              { header: "Phone", key: "phone" },
+              { header: "City", key: "city" },
+              { header: "Outstanding Balance (₹)", key: "outstandingBalance" },
+              { header: "Credit Limit (₹)", key: "creditLimit" },
+              { header: "Status", key: "status" },
+            ]);
+            ExportService.downloadCSV(csv, `Khata_Receivables_${new Date().toISOString().split("T")[0]}`);
+            success("Khata ledger CSV exported!");
+          }}
+          className="self-start sm:self-auto font-semibold"
+        >
+          <Download className="w-4 h-4 mr-1.5" />
+          <span>Export Ledger CSV</span>
+        </Button>
       </div>
 
       {/* Hero Financial Dominance Cards */}
@@ -205,11 +230,13 @@ export default function KhataPage() {
             <Button
               variant="secondary"
               className="w-full text-xs font-semibold"
-              onClick={() =>
-                success(`WhatsApp link shared with ${selectedCustomer.name}`)
-              }
+              onClick={() => {
+                const msg = `Vanakkam ${selectedCustomer.name},\nThis is a gentle payment reminder from ${business?.name || "GrowthEngine"}.\nYour pending ledger balance is ${formatIndianCurrency(selectedCustomer.outstandingBalance)}.\nPlease settle via UPI: growthengine@hdfcbank.\nThank you!`;
+                window.open(ExportService.getWhatsAppUrl(selectedCustomer.phone, msg), "_blank");
+                success(`WhatsApp reminder link opened for ${selectedCustomer.name}`);
+              }}
             >
-              <Send className="w-4 h-4 mr-2 text-emerald-600" />
+              <Share2 className="w-4 h-4 mr-2 text-emerald-600" />
               <span>Send UPI Payment Reminder via WhatsApp</span>
             </Button>
 

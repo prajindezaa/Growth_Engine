@@ -17,7 +17,8 @@ const ALLOWED_ROUTES: Set<AIRouteId> = new Set([
   "capability_check", "greeting", "clarification_needed", "out_of_scope",
   "my_account_info", "my_business_info", "my_plan_subscription", "update_business_setting",
   "current_date_time", "app_help_navigation",
-  "update_customer", "update_supplier", "update_product", "update_invoice_status", "create_automation_rule"
+  "update_customer", "update_supplier", "update_product", "update_invoice_status", "create_automation_rule",
+  "export_report_pdf", "export_report_excel", "export_data"
 ]);
 
 export async function POST(req: NextRequest) {

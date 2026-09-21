@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatIndianCurrency, formatShortDate } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
 import {
   TrendingUp,
   AlertCircle,
@@ -18,19 +19,77 @@ import {
   ArrowRight,
   Send,
   Sparkles,
+  X,
+  Compass,
 } from "lucide-react";
 
 export default function DashboardPage() {
+  const { business } = useAuth();
   const { stats, topCustomersDue, criticalProducts } = useDashboardData();
+  const [showTour, setShowTour] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const seen = localStorage.getItem("growthengine_has_seen_tour");
+      if (!seen) {
+        setShowTour(true);
+      }
+    }
+  }, []);
+
+  const dismissTour = () => {
+    setShowTour(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("growthengine_has_seen_tour", "true");
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
+      {/* First-Time User Guided Tour Banner */}
+      {showTour && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-900 to-[#4F46E5] text-white shadow-lg relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5 relative z-10">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-white/10 backdrop-blur-xs text-amber-300">
+                <Compass className="w-4 h-4" />
+              </span>
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">
+                Welcome to GrowthEngine MSME OS
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-bold">
+              3 Quick Steps to Start Your Digital Shop:
+            </h3>
+            <p className="text-xs text-indigo-100 max-w-xl leading-relaxed">
+              1. <strong>Add your catalog items</strong> in Products &bull; 2. <strong>Create your first GST bill</strong> in POS &bull; 3. <strong>Track udhar receivables</strong> in Khata with instant WhatsApp reminders.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 relative z-10 self-start sm:self-auto shrink-0">
+            <Link href="/products" onClick={dismissTour}>
+              <Button size="sm" className="bg-white text-indigo-900 hover:bg-indigo-50 font-bold text-xs h-9">
+                <span>Start Tour</span>
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Button>
+            </Link>
+            <button
+              onClick={dismissTour}
+              className="p-2 rounded-xl text-indigo-200 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Dismiss tour"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hero Welcome & Date */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            வணக்கம், Sri Lakshmi Enterprises
+            வணக்கம், {business?.name || "Sri Lakshmi Enterprises"}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             Today’s business performance & pending action items
