@@ -83,9 +83,10 @@ export async function POST(req: NextRequest) {
     if (detectedRoute === "out_of_scope" && process.env.GEMINI_API_KEY) {
       try {
         const apiKey = process.env.GEMINI_API_KEY;
-        let model = process.env.GEMINI_MODEL || "gemini-1.5-flash";
-        if (model.includes("3.8") || !model.startsWith("gemini-")) {
-          model = "gemini-1.5-flash";
+        // Use active working model gemini-3.6-flash
+        let model = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+        if (model === "gemini-1.5-flash" || model.includes("2.5") || model.includes("3.8") || !model.startsWith("gemini-")) {
+          model = "gemini-3.6-flash";
         }
 
         const classifierPrompt = `You are the Intent Classifier for GrowthEngine Business Operating System.
@@ -109,7 +110,8 @@ capability_check, greeting, out_of_scope
 USER MESSAGE: "${prompt}"
 
 CRITICAL RULE:
-If you are NOT highly confident that the user's message matches one of the specific business routes above, or if it is general conversation, general knowledge, weather, or outside current capability, you MUST return "out_of_scope". DO NOT guess.
+If the user's message is asking about business sales, Khata due, inventory, stock, accounts, profile, settings, team, date/time, help, or greetings, pick the best matching route.
+Only if it is completely irrelevant (e.g. weather, politics, jokes, non-business general knowledge), return "out_of_scope".
 
 Respond strictly in JSON format:
 { "route": "detected_route", "confidence": 0.0_to_1.0, "params": {} }`;
@@ -129,15 +131,16 @@ Respond strictly in JSON format:
         if (geminiRes.ok) {
           const gData = await geminiRes.json();
           const rawText = gData.candidates?.[0]?.content?.parts?.[0]?.text;
-          const parsed = JSON.parse(rawText.replace(/```json/g, "").replace(/```/g, "").trim());
-          
-          // Condition 4: If classifier cannot confidently match (> 0.8) a valid fixed route, strictly return out_of_scope
-          if (parsed.route && ALLOWED_ROUTES.has(parsed.route) && (parsed.confidence === undefined || parsed.confidence >= 0.8)) {
-            detectedRoute = parsed.route;
-            detectedParams = parsed.params || {};
-          } else {
-            detectedRoute = "out_of_scope";
-            detectedParams = {};
+          if (rawText) {
+            const parsed = JSON.parse(rawText.replace(/```json/g, "").replace(/```/g, "").trim());
+            
+            if (parsed.route && ALLOWED_ROUTES.has(parsed.route) && (parsed.confidence === undefined || parsed.confidence >= 0.6)) {
+              detectedRoute = parsed.route;
+              detectedParams = parsed.params || {};
+            } else {
+              detectedRoute = "out_of_scope";
+              detectedParams = {};
+            }
           }
         }
       } catch (e) {
