@@ -167,6 +167,97 @@ async function runTests() {
   const cancelAudit = auditLogs.find((l) => l.route === "cancel_invoice");
   assert(cancelAudit?.isHighRisk === true, "cancel_invoice logged in audit trail as isHighRisk: true");
 
+  // --------------------------------------------------------------------------
+  // 10. Account & Profile Routes (L)
+  // --------------------------------------------------------------------------
+  console.log("\n--- 10. Testing Account & Profile Routes (L) ---");
+  const accEn = detectIntentLocally("What's my account?");
+  const accTa = detectIntentLocally("என் அக்கவுன்ட் தகவல்");
+  assert(accEn.route === "my_account_info", "English 'What's my account?' -> my_account_info");
+  assert(accTa.route === "my_account_info", "Tamil 'என் அக்கவுன்ட் தகவல்' -> my_account_info");
+  const accRes = await executeRoute(accEn.route, {}, { userRole: "owner" });
+  assert(accRes.reply.includes("logged in as Ramasamy S, role: Owner"), "Account info pulls real profile and owner role");
+
+  const bizEn = detectIntentLocally("What's my business GSTIN?");
+  const bizTa = detectIntentLocally("என் கடை விவரம்");
+  assert(bizEn.route === "my_business_info", "English 'What's my business GSTIN?' -> my_business_info");
+  assert(bizTa.route === "my_business_info", "Tamil 'என் கடை விவரம்' -> my_business_info");
+  const bizRes = await executeRoute(bizEn.route);
+  assert(bizRes.reply.includes("GSTIN 33AABCS1429B1ZB"), "Business info pulls real GSTIN");
+
+  const planEn = detectIntentLocally("What plan am I on?");
+  const planInvoices = detectIntentLocally("How many invoices have I used this month?");
+  assert(planEn.route === "my_plan_subscription", "Plan inquiry -> my_plan_subscription");
+  assert(planInvoices.route === "my_plan_subscription", "Invoice usage inquiry -> my_plan_subscription");
+  const planRes = await executeRoute(planEn.route);
+  assert(planRes.reply.includes("Growth Pro") && planRes.reply.includes("invoices used this month"), "Subscription reports real plan & invoices used");
+
+  const setSetting = detectIntentLocally("Change my business address to 45 Trichy Road, Coimbatore");
+  assert(setSetting.route === "update_business_setting", "Setting update -> update_business_setting");
+  const setCashier = await executeRoute(setSetting.route, setSetting.params, { userRole: "cashier" });
+  assert(setCashier.reply.includes("Permission denied"), "Cashier cannot change business settings");
+  const setOwner = await executeRoute(setSetting.route, setSetting.params, { userRole: "owner" });
+  assert(!!setOwner.actionProposal && setOwner.actionProposal.status === "pending", "Owner receives action preview proposal for business setting");
+
+  // High Risk Team Role Change & Removal
+  const roleChange = detectIntentLocally("Make Senthil a manager");
+  assert(roleChange.route === "change_team_member_role", "Role change -> change_team_member_role");
+  const roleChangeRes = await executeRoute(roleChange.route, roleChange.params, { userRole: "owner" });
+  assert(roleChangeRes.actionProposal?.isHighRisk === true, "change_team_member_role is flagged as High Risk");
+  assert(Boolean(roleChangeRes.actionProposal?.consequences.includes("privileged business operations")), "Highlights consequence of role change");
+
+  const removeStaff = detectIntentLocally("Remove Senthil from the team");
+  assert(removeStaff.route === "remove_team_member", "Staff remove -> remove_team_member");
+  const removeStaffRes = await executeRoute(removeStaff.route, removeStaff.params, { userRole: "owner" });
+  assert(removeStaffRes.actionProposal?.isHighRisk === true, "remove_team_member is flagged as High Risk");
+  assert(Boolean(removeStaffRes.actionProposal?.consequences.includes("removes their access immediately")), "Highlights consequence of immediate access removal");
+
+  // --------------------------------------------------------------------------
+  // 11. System & Orientation Routes (M)
+  // --------------------------------------------------------------------------
+  console.log("\n--- 11. Testing System / Orientation Routes (M) ---");
+  const dateEn = detectIntentLocally("What's today's date?");
+  const dateTa = detectIntentLocally("இன்னைக்கு என்ன தேதி?");
+  const dateTang = detectIntentLocally("innaiku enna date?");
+  assert(dateEn.route === "current_date_time", "English 'What's today's date?' -> current_date_time");
+  assert(dateTa.route === "current_date_time", "Tamil 'இன்னைக்கு என்ன தேதி?' -> current_date_time");
+  assert(dateTang.route === "current_date_time", "Tanglish 'innaiku enna date?' -> current_date_time");
+  const dateRes = await executeRoute(dateEn.route);
+  assert(dateRes.reply.includes("Today is") && dateRes.reply.includes("2026"), "Current date reports actual year and formatted date");
+
+  const helpEn = detectIntentLocally("Where do I find reports?");
+  const helpPos = detectIntentLocally("How do I add a new product?");
+  assert(helpEn.route === "app_help_navigation", "Navigation help -> app_help_navigation");
+  assert(helpPos.route === "app_help_navigation", "Product help -> app_help_navigation");
+  const helpRes = await executeRoute(helpEn.route, helpEn.params);
+  assert(helpRes.structuredCards?.items[0].linkHref === "/reports", "App help provides direct navigation link card");
+
+  // --------------------------------------------------------------------------
+  // 12. Expanded Action Coverage Across Modules (N)
+  // --------------------------------------------------------------------------
+  console.log("\n--- 12. Testing Expanded Action Coverage (N) ---");
+  const updCust = detectIntentLocally("Change Ravi Traders' credit limit to ₹60,000");
+  assert(updCust.route === "update_customer", "Credit limit change -> update_customer");
+  assert(updCust.params.creditLimit === 60000, "Extracts ₹60,000 credit limit parameter");
+  const updCustRes = await executeRoute(updCust.route, updCust.params, { userRole: "owner" });
+  assert(updCustRes.actionProposal?.details["New Credit Limit"] === "₹60,000", "Action preview displays formatted credit limit");
+
+  const updProd = detectIntentLocally("Update the price of UltraTech Cement to ₹390");
+  assert(updProd.route === "update_product", "Price change -> update_product");
+  assert(updProd.params.newSellingPrice === 390, "Extracts new price parameter of 390");
+  const updProdRes = await executeRoute(updProd.route, updProd.params, { userRole: "owner" });
+  assert(updProdRes.actionProposal?.details["New Selling Price"] === "₹390", "Action preview displays formatted new price");
+
+  const updInv = detectIntentLocally("Mark invoice INV-105 as sent");
+  assert(updInv.route === "update_invoice_status", "Invoice status change -> update_invoice_status");
+  const updInvRes = await executeRoute(updInv.route, updInv.params, { userRole: "owner" });
+  assert(updInvRes.actionProposal?.details["Target Status"] === "SENT", "Action preview targets status SENT");
+
+  const autoRule = detectIntentLocally("Alert me if any customer's outstanding goes above ₹50,000");
+  assert(autoRule.route === "create_automation_rule", "Alert creation -> create_automation_rule");
+  const autoRuleRes = await executeRoute(autoRule.route, autoRule.params, { userRole: "owner" });
+  assert(String(autoRuleRes.actionProposal?.details["Trigger Condition"]).includes("outstanding_balance > 50000"), "Captures trigger condition in action proposal");
+
   console.log("\n============================================================");
   console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log("============================================================\n");

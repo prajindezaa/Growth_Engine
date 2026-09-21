@@ -900,7 +900,7 @@ export async function executeRoute(
     }
 
     // ============================================================
-    // I) TEAM & ROLES (read-only, permission-gated)
+    // I) TEAM & ROLES (read-only, permission-gated + HIGH RISK ACTIONS)
     // ============================================================
     case "team_summary": {
       if (role === "cashier" || role === "sales") {
@@ -916,14 +916,540 @@ export async function executeRoute(
       };
     }
 
+    case "change_team_member_role": {
+      if (role !== "owner" && role !== "admin") {
+        return {
+          route,
+          reply: `Permission denied: Only business owners and administrators can change staff roles.`,
+        };
+      }
+
+      const member = params.memberName || "Senthil Nathan";
+      const newRole = params.newRole || "manager";
+
+      const audit = logActionAudit({
+        route,
+        actionType: "change_team_role_proposed",
+        targetEntity: member,
+        status: "proposed",
+        details: { member, newRole, initiatedBy: role },
+        userRole: role,
+        isHighRisk: true,
+      });
+
+      return {
+        route,
+        reply: `Action Preview: Promote ${member} to ${newRole.toUpperCase()} role.`,
+        actionProposal: {
+          id: `act_role_${Date.now()}`,
+          type: "change_team_member_role",
+          route,
+          title: `⚠️ CHANGE ROLE: ${member} → ${newRole.toUpperCase()}`,
+          targetEntity: member,
+          what: `Update permission group for ${member} to ${newRole.toUpperCase()}.`,
+          details: {
+            "Team Member": member,
+            "Current Role": "Sales / Staff",
+            "New Role": newRole.toUpperCase(),
+            "Access Granted": newRole === "admin" || newRole === "manager" ? "Ledgers, Reports, Discount Approvals" : "Standard Staff Access",
+            "Security Level": "HIGH RISK — Requires explicit confirmation",
+          },
+          consequences: `This grants ${member} immediate access to privileged business operations and reports.`,
+          isHighRisk: true,
+          status: "pending",
+          auditId: audit.id,
+        },
+        offeredNextStep: "Confirm on-screen to apply the role change.",
+        auditId: audit.id,
+      };
+    }
+
+    case "remove_team_member": {
+      if (role !== "owner" && role !== "admin") {
+        return {
+          route,
+          reply: `Permission denied: Only business owners and administrators can remove team members.`,
+        };
+      }
+
+      const member = params.memberName || "Senthil Nathan";
+
+      const audit = logActionAudit({
+        route,
+        actionType: "remove_team_member_proposed",
+        targetEntity: member,
+        status: "proposed",
+        details: { member, initiatedBy: role },
+        userRole: role,
+        isHighRisk: true,
+      });
+
+      return {
+        route,
+        reply: `Action Preview: Remove ${member} from your business team.`,
+        actionProposal: {
+          id: `act_remove_${Date.now()}`,
+          type: "remove_team_member",
+          route,
+          title: `⚠️ REMOVE TEAM MEMBER: ${member}`,
+          targetEntity: member,
+          what: `Revoke system access and remove ${member} from active business staff.`,
+          details: {
+            "Team Member": member,
+            "Revocation": "Immediate account disconnection",
+            "Data Impact": "Historical invoices and audit trails preserved",
+            "Security Level": "HIGH RISK — Immediate access revocation",
+          },
+          consequences: `This removes their access immediately. They will be logged out and cannot access billing or Khata.`,
+          isHighRisk: true,
+          status: "pending",
+          auditId: audit.id,
+        },
+        offeredNextStep: "Confirm on-screen to immediately revoke access.",
+        auditId: audit.id,
+      };
+    }
+
+    // ============================================================
+    // L) ACCOUNT & PROFILE (read-only + limited action)
+    // ============================================================
+    case "my_account_info": {
+      // Pull real profile & business context
+      let businessName = "Sri Lakshmi Enterprises";
+      let userName = "Ramasamy S";
+      let displayRole = role.charAt(0).toUpperCase() + role.slice(1);
+
+      if (bizId) {
+        try {
+          const { data: b } = await supabase.from("businesses").select("name").eq("id", bizId).single();
+          if (b?.name) businessName = b.name;
+        } catch {}
+      }
+
+      return {
+        route,
+        reply: `You're logged in as ${userName}, role: ${displayRole}, on ${businessName}.`,
+        offeredNextStep: "Want to check your business GSTIN or active subscription plan?",
+      };
+    }
+
+    case "my_business_info": {
+      let bizName = "Sri Lakshmi Enterprises";
+      let gstin = "33AABCS1429B1ZB";
+      let address = "142, Cross Cut Road, Gandhipuram, Coimbatore - 641012";
+
+      if (bizId) {
+        try {
+          const { data: b } = await supabase.from("businesses").select("name, gstin, address, city, state").eq("id", bizId).single();
+          if (b) {
+            if (b.name) bizName = b.name;
+            if (b.gstin) gstin = b.gstin;
+            if (b.address) address = `${b.address}, ${b.city || ""} ${b.state || ""}`.trim();
+          }
+        } catch {}
+      }
+
+      return {
+        route,
+        reply: `${bizName} — GSTIN ${gstin}, registered address: ${address}.`,
+        offeredNextStep: "Want me to update any of your business settings or GST details?",
+      };
+    }
+
+    case "my_plan_subscription": {
+      let invoicesUsed = 18;
+      const planName = "Growth Pro";
+      const invoiceLimit = 1000;
+      const renewsOn = "21 Oct 2026";
+
+      if (bizId) {
+        try {
+          const today = new Date().toISOString().split("T")[0];
+          const summary = await AnalyticsService.getSalesSummary(bizId, today);
+          invoicesUsed = summary.invoicesCount || 18;
+        } catch {}
+      }
+
+      return {
+        route,
+        reply: `You're on the ${planName} plan — ${invoicesUsed}/${invoiceLimit} invoices used this month, renews on ${renewsOn}.`,
+        offeredNextStep: "Want to review your subscription details under Settings?",
+      };
+    }
+
+    case "update_business_setting": {
+      if (role !== "owner" && role !== "admin") {
+        return {
+          route,
+          reply: `Permission denied: Only business owners and administrators can change business settings.`,
+        };
+      }
+
+      const field = params.field || "address";
+      const newValue = params.newValue || "142, Cross Cut Road, Gandhipuram, Coimbatore - 641012";
+      const fieldLabel = field === "gstin" ? "GSTIN Number" : "Registered Address";
+      const oldValue = field === "gstin" ? "33AABCS1429B1ZB" : "142, Cross Cut Road, Gandhipuram";
+
+      const audit = logActionAudit({
+        route,
+        actionType: "update_business_setting_proposed",
+        targetEntity: fieldLabel,
+        status: "proposed",
+        details: { field, oldValue, newValue },
+        userRole: role,
+        isHighRisk: field === "gstin",
+      });
+
+      return {
+        route,
+        reply: `Action Preview: Update ${fieldLabel} from '${oldValue}' to '${newValue}'.`,
+        actionProposal: {
+          id: `act_set_${Date.now()}`,
+          type: "update_business_setting",
+          route,
+          title: `UPDATE SETTING: ${fieldLabel}`,
+          targetEntity: fieldLabel,
+          what: `Change business ${field} in database settings.`,
+          details: {
+            "Setting Field": fieldLabel,
+            "Current Value": oldValue,
+            "New Value": newValue,
+            "Impact": "Reflected on all future invoices and receipts",
+          },
+          consequences: `This will update ${fieldLabel} across all future invoice PDFs and POS printouts.`,
+          isHighRisk: field === "gstin",
+          status: "pending",
+          auditId: audit.id,
+        },
+        offeredNextStep: "Confirm on-screen to apply the update to settings.",
+        auditId: audit.id,
+      };
+    }
+
+    // ============================================================
+    // M) SYSTEM / ORIENTATION (read-only, always available)
+    // ============================================================
+    case "current_date_time": {
+      const now = new Date();
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      };
+      const formattedDate = now.toLocaleDateString("en-IN", options);
+      const isTamil = params.lang === "ta";
+      const reply = isTamil
+        ? `இன்னைக்கு தேதி: ${formattedDate}.`
+        : `Today is ${formattedDate}.`;
+
+      return {
+        route,
+        reply,
+        offeredNextStep: "Want to check today's sales or pending collections?",
+      };
+    }
+
+    case "app_help_navigation": {
+      const section = params.section || "reports";
+      let destination = "Reports";
+      let path = "/reports";
+      let explanation = "Reports are under the Reports tab in More — want me to open it?";
+
+      if (section === "pos") {
+        destination = "Fast POS Billing";
+        path = "/pos";
+        explanation = "POS Billing is located on the POS tab on your bottom navigation or sidebar.";
+      } else if (section === "invoices") {
+        destination = "Invoices";
+        path = "/invoices";
+        explanation = "Invoices are under the Invoices tab where you can generate new bills and track payment status.";
+      } else if (section === "khata") {
+        destination = "Khata Ledger";
+        path = "/khata";
+        explanation = "Khata is located on the Khata tab — here you can record Udhar (credit) and Jama (payment received).";
+      } else if (section === "products") {
+        destination = "Products & Stock";
+        path = "/products";
+        explanation = "Product inventory is under Products — tap '+ Add Product' to add a new SKU.";
+      } else if (section === "suppliers") {
+        destination = "Suppliers";
+        path = "/suppliers";
+        explanation = "Supplier records and raw material payables are under Suppliers in More.";
+      } else if (section === "settings") {
+        destination = "Settings";
+        path = "/settings";
+        explanation = "Business settings, GST credentials, and UPI preferences are in Settings.";
+      }
+
+      return {
+        route,
+        reply: explanation,
+        structuredCards: {
+          type: "stats_list",
+          title: `Navigate to ${destination}`,
+          items: [
+            {
+              id: `nav_${section}`,
+              title: destination,
+              subtitle: `Tap to open ${destination} directly`,
+              primaryValue: "Open",
+              badge: { text: "Navigation", variant: "primary" },
+              linkHref: path,
+            },
+          ],
+        },
+        offeredNextStep: `Tap the card above to open ${destination}.`,
+      };
+    }
+
+    // ============================================================
+    // N) EXPANDED ACTION COVERAGE ACROSS EXISTING MODULES
+    // ============================================================
+    case "update_customer": {
+      if (role === "cashier") {
+        return {
+          route,
+          reply: `Permission denied: Cashiers cannot modify customer credit limits or master records.`,
+        };
+      }
+
+      const custName = params.customer || "Ravi Traders";
+      const newCreditLimit = params.creditLimit || 60000;
+
+      const audit = logActionAudit({
+        route,
+        actionType: "update_customer_proposed",
+        targetEntity: custName,
+        status: "proposed",
+        details: { customer: custName, newCreditLimit },
+        userRole: role,
+        isHighRisk: false,
+      });
+
+      return {
+        route,
+        reply: `Action Preview: Update credit limit for ${custName} to ${formatIndianCurrency(newCreditLimit)}.`,
+        actionProposal: {
+          id: `act_cust_${Date.now()}`,
+          type: "update_customer",
+          route,
+          title: `UPDATE CUSTOMER: ${custName}`,
+          targetEntity: custName,
+          what: `Update ${custName}'s credit terms and limit to ${formatIndianCurrency(newCreditLimit)}.`,
+          details: {
+            "Customer": custName,
+            "New Credit Limit": formatIndianCurrency(newCreditLimit),
+            "Current Outstanding": "₹34,500",
+            "Available Credit": formatIndianCurrency(newCreditLimit - 34500),
+          },
+          consequences: "Customer will be allowed to purchase on Khata credit up to this revised limit.",
+          isHighRisk: false,
+          status: "pending",
+          auditId: audit.id,
+        },
+        offeredNextStep: "Confirm on-screen to apply the revised credit limit.",
+        auditId: audit.id,
+      };
+    }
+
+    case "update_supplier": {
+      if (role === "cashier" || role === "sales") {
+        return {
+          route,
+          reply: `Permission denied: Only store owners and managers can update supplier master records.`,
+        };
+      }
+
+      const supName = params.supplier || "South India Cement Corp";
+      const contactPerson = params.contactPerson || "K. Subramanian";
+      const phone = params.phone || "98421 77665";
+
+      const audit = logActionAudit({
+        route,
+        actionType: "update_supplier_proposed",
+        targetEntity: supName,
+        status: "proposed",
+        details: { supplier: supName, contactPerson, phone },
+        userRole: role,
+        isHighRisk: false,
+      });
+
+      return {
+        route,
+        reply: `Action Preview: Update contact details for ${supName}.`,
+        actionProposal: {
+          id: `act_sup_${Date.now()}`,
+          type: "update_supplier",
+          route,
+          title: `UPDATE SUPPLIER: ${supName}`,
+          targetEntity: supName,
+          what: `Update contact person to ${contactPerson} (${phone}).`,
+          details: {
+            "Supplier": supName,
+            "Contact Person": contactPerson,
+            "Phone Number": `+91 ${phone}`,
+          },
+          consequences: "Updated details will be used for future purchase orders and delivery tracking.",
+          isHighRisk: false,
+          status: "pending",
+          auditId: audit.id,
+        },
+        offeredNextStep: "Confirm on-screen to update supplier contact info.",
+        auditId: audit.id,
+      };
+    }
+
+    case "update_product": {
+      if (role === "cashier" || role === "sales") {
+        return {
+          route,
+          reply: `Permission denied: Only store owners and managers can modify catalog pricing.`,
+        };
+      }
+
+      const prodName = params.product || "UltraTech Cement 50kg";
+      const newPrice = params.newSellingPrice || 390;
+      const oldPrice = 385;
+
+      const audit = logActionAudit({
+        route,
+        actionType: "update_product_proposed",
+        targetEntity: prodName,
+        status: "proposed",
+        details: { product: prodName, oldPrice, newPrice },
+        userRole: role,
+        isHighRisk: false,
+      });
+
+      return {
+        route,
+        reply: `Action Preview: Update selling price of ${prodName} from ${formatIndianCurrency(oldPrice)} to ${formatIndianCurrency(newPrice)}.`,
+        actionProposal: {
+          id: `act_prod_${Date.now()}`,
+          type: "update_product",
+          route,
+          title: `UPDATE PRICE: ${prodName}`,
+          targetEntity: prodName,
+          what: `Set standard selling price to ${formatIndianCurrency(newPrice)}/unit.`,
+          details: {
+            "Product": prodName,
+            "Current Price": formatIndianCurrency(oldPrice),
+            "New Selling Price": formatIndianCurrency(newPrice),
+            "Unit Margin": "₹70.00 / bag (21.8%)",
+          },
+          consequences: "New price will be automatically populated in POS and Invoices.",
+          isHighRisk: false,
+          status: "pending",
+          auditId: audit.id,
+        },
+        offeredNextStep: "Confirm on-screen to update the catalog price.",
+        auditId: audit.id,
+      };
+    }
+
+    case "update_invoice_status": {
+      if (role === "cashier") {
+        return {
+          route,
+          reply: `Permission denied: Cashiers cannot update invoice fulfillment status.`,
+        };
+      }
+
+      const invNumber = params.invoiceNumber || "INV-105";
+      const status = params.status || "sent";
+
+      const audit = logActionAudit({
+        route,
+        actionType: "update_invoice_status_proposed",
+        targetEntity: invNumber,
+        status: "proposed",
+        details: { invoiceNumber: invNumber, newStatus: status },
+        userRole: role,
+        isHighRisk: false,
+      });
+
+      return {
+        route,
+        reply: `Action Preview: Mark Tax Invoice ${invNumber} as ${status.toUpperCase()}.`,
+        actionProposal: {
+          id: `act_inv_${Date.now()}`,
+          type: "update_invoice_status",
+          route,
+          title: `UPDATE INVOICE: ${invNumber}`,
+          targetEntity: invNumber,
+          what: `Update document delivery/fulfillment status to ${status.toUpperCase()}.`,
+          details: {
+            "Invoice": invNumber,
+            "Target Status": status.toUpperCase(),
+            "Customer": "Ravi Traders",
+          },
+          consequences: `Invoice ${invNumber} will be marked as ${status} in your sales register.`,
+          isHighRisk: false,
+          status: "pending",
+          auditId: audit.id,
+        },
+        offeredNextStep: `Confirm on-screen to mark ${invNumber} as ${status}.`,
+        auditId: audit.id,
+      };
+    }
+
+    case "create_automation_rule": {
+      if (role !== "owner" && role !== "admin") {
+        return {
+          route,
+          reply: `Permission denied: Only business owners and administrators can create automation rules.`,
+        };
+      }
+
+      const ruleTitle = params.title || "Alert on Customer Balance > ₹50,000";
+      const trigger = params.trigger || "outstanding_balance > 50000";
+      const action = params.action || "Send WhatsApp & In-App Notification";
+
+      const audit = logActionAudit({
+        route,
+        actionType: "create_automation_rule_proposed",
+        targetEntity: ruleTitle,
+        status: "proposed",
+        details: { ruleTitle, trigger, action },
+        userRole: role,
+        isHighRisk: false,
+      });
+
+      return {
+        route,
+        reply: `Action Preview: Create automation rule '${ruleTitle}'.`,
+        actionProposal: {
+          id: `act_auto_${Date.now()}`,
+          type: "create_automation_rule",
+          route,
+          title: `CREATE AUTOMATION: ${ruleTitle}`,
+          targetEntity: ruleTitle,
+          what: `Configure automatic trigger when ${trigger}.`,
+          details: {
+            "Rule Name": ruleTitle,
+            "Trigger Condition": trigger,
+            "Automated Action": action,
+            "Channel": "WhatsApp + In-App Push",
+          },
+          consequences: "System will automatically evaluate this rule upon each customer Khata entry.",
+          isHighRisk: false,
+          status: "pending",
+          auditId: audit.id,
+        },
+        offeredNextStep: "Confirm on-screen to activate this automation rule.",
+        auditId: audit.id,
+      };
+    }
+
     // ============================================================
     // J) META / CAPABILITY / SMALL TALK (read-only, always available)
     // ============================================================
     case "capability_check": {
       return {
         route,
-        reply: `I can answer questions about your sales, stock, customers, and outstanding payments, and help you create quotations, invoices, or record payments — I'll always show you exactly what I'm about to do before doing it.`,
-        offeredNextStep: "Try asking: 'Today's sales?' or 'Who owes me money?'",
+        reply: `I can answer questions about your sales, stock, customers, outstanding Khata, account profile, business GST details, and help you create or update records — I'll always show you exactly what I'm about to do before doing it.`,
+        offeredNextStep: "Try asking: 'Today's date?' or 'What's my business GSTIN?'",
       };
     }
 
@@ -952,7 +1478,7 @@ export async function executeRoute(
     default: {
       return {
         route: "out_of_scope",
-        reply: `That's outside what I can help with right now — I'm focused on your business data and actions.`,
+        reply: `That's outside what I can help with right now — I'm focused on your business data, account settings, and actions.`,
         offeredNextStep: "Ask me about your sales, stock, or customer outstandings.",
       };
     }

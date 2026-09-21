@@ -41,11 +41,27 @@ export type AIRouteId =
   | "recent_notifications"
   // I) TEAM & ROLES
   | "team_summary"
+  | "change_team_member_role" // High risk, strong confirmation
+  | "remove_team_member" // High risk, strong confirmation
   // J) META & CONVERSATION
   | "capability_check"
   | "greeting"
   | "clarification_needed"
-  | "out_of_scope";
+  | "out_of_scope"
+  // L) ACCOUNT & PROFILE
+  | "my_account_info"
+  | "my_business_info"
+  | "my_plan_subscription"
+  | "update_business_setting" // Action, standard confirmation
+  // M) SYSTEM / ORIENTATION
+  | "current_date_time"
+  | "app_help_navigation"
+  // N) EXPANDED ACTION COVERAGE
+  | "update_customer"
+  | "update_supplier"
+  | "update_product"
+  | "update_invoice_status"
+  | "create_automation_rule";
 
 export interface AIActionProposalData {
   id: string;

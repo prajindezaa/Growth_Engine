@@ -358,12 +358,191 @@ export function detectIntentLocally(input: string, context?: { lastMentionedInvo
   }
 
   // ============================================================
-  // I) TEAM & ROLES (READ-ONLY, PERMISSION-GATED)
+  // I) TEAM & ROLES (READ-ONLY + HIGH RISK ACTIONS)
   // ============================================================
+  // Action (HIGH RISK): Remove Team Member
+  if (
+    /remove.*(team\s+member|staff|employee|from\s+the\s+team)|delete.*(team\s+member|staff)|வேலையாளை\s+நீக்கு|staff\s+remove/i.test(lower)
+  ) {
+    const memberName = extractMemberName(lower) || "Senthil Nathan";
+    return {
+      route: "remove_team_member",
+      params: { memberName },
+    };
+  }
+
+  // Action (HIGH RISK): Change Team Member Role
+  if (
+    /make.*(a\s+manager|an\s+admin|cashier|sales)|promote.*to|change.*role|assign.*role|ரோல்\s+மாற்று/i.test(lower)
+  ) {
+    const memberName = extractMemberName(lower) || "Senthil Nathan";
+    const newRole = /admin/i.test(lower)
+      ? "admin"
+      : /manager/i.test(lower)
+      ? "manager"
+      : /cashier/i.test(lower)
+      ? "cashier"
+      : /accountant/i.test(lower)
+      ? "accountant"
+      : "manager";
+    return {
+      route: "change_team_member_role",
+      params: { memberName, newRole },
+    };
+  }
+
   if (
     /who'?s\s+on\s+my\s+team|how\s+many\s+staff\s+do\s+i\s+have|team\s+summary|staff\s+list|வேலையாட்கள்/i.test(lower)
   ) {
     return { route: "team_summary", params: {} };
+  }
+
+  // ============================================================
+  // L) ACCOUNT & PROFILE (READ-ONLY + ACTIONS)
+  // ============================================================
+  if (
+    /what'?s\s+my\s+account|show\s+(my\s+)?profile|who\s+am\s+i\s+logged\s+in\s+as|my\s+account(\s+info)?|என்\s+அக்கவுன்ட்(\s+தகவல்)?|en\s+account|profile\s+details/i.test(lower)
+  ) {
+    return { route: "my_account_info", params: {} };
+  }
+
+  // Action (STANDARD CONFIRMATION): Update Business Setting
+  if (
+    /change.*business\s+address|update.*(business\s+address|gst\s+number|gstin|store\s+address|business\s+phone)|முகவரி\s+மாற்று|கடை\s+விலாசம்/i.test(lower)
+  ) {
+    let field = "address";
+    let newValue = "142, Cross Cut Road, Gandhipuram, Coimbatore - 641012";
+    if (/gst|gstin/i.test(lower)) {
+      field = "gstin";
+      const gstMatch = lower.match(/[0-9]{2}[a-z]{5}[0-9]{4}[a-z]{1}[1-9a-z]{1}z[0-9a-z]{1}/i);
+      newValue = gstMatch ? gstMatch[0].toUpperCase() : "33AABCS1429B1ZB";
+    } else if (/address/i.test(lower)) {
+      field = "address";
+      const addrMatch = raw.match(/(?:to|as)\s+([^.]+)/i);
+      if (addrMatch && addrMatch[1]) newValue = addrMatch[1].trim();
+    }
+    return {
+      route: "update_business_setting",
+      params: { field, newValue },
+    };
+  }
+
+  if (
+    /what'?s\s+my\s+business\s+gstin|show\s+my\s+business\s+details|business\s+info|business\s+gstin|store\s+details|என்\s+கடை\s+விவரம்|கடை\s+ஜிஎஸ்டி|business\s+details/i.test(lower)
+  ) {
+    return { route: "my_business_info", params: {} };
+  }
+
+  if (
+    /what\s+plan\s+am\s+i\s+on|my\s+subscription|how\s+many\s+invoices\s+have\s+i\s+used|plan\s+status|subscription\s+details|என்\s+பிளான்/i.test(lower)
+  ) {
+    return { route: "my_plan_subscription", params: {} };
+  }
+
+  // ============================================================
+  // M) SYSTEM / ORIENTATION (READ-ONLY, ALWAYS AVAILABLE)
+  // ============================================================
+  if (
+    /what'?s\s+today'?s\s+date|what\s+is\s+today'?s\s+date|இன்னைக்கு\s+என்ன\s+தேதி|என்ன\s+தேதி\s+இன்னைக்கு|innaiku\s+enna\s+thethi|innaiku\s+enna\s+date|current\s+date|today\s+date\b/i.test(lower)
+  ) {
+    return { route: "current_date_time", params: {} };
+  }
+
+  if (
+    /where\s+do\s+i\s+find|how\s+do\s+i\s+add|where\s+is\s+the|take\s+me\s+to|open\s+(reports|pos|invoices|khata|products|suppliers|settings)|எங்கு\s+இருக்கு|எப்படி\s+போவது/i.test(lower)
+  ) {
+    let section = "reports";
+    if (/pos|billing/i.test(lower)) section = "pos";
+    else if (/invoice/i.test(lower)) section = "invoices";
+    else if (/khata|ledger/i.test(lower)) section = "khata";
+    else if (/product|item|stock/i.test(lower)) section = "products";
+    else if (/supplier|vendor/i.test(lower)) section = "suppliers";
+    else if (/setting/i.test(lower)) section = "settings";
+    else if (/report/i.test(lower)) section = "reports";
+
+    return { route: "app_help_navigation", params: { section } };
+  }
+
+  // ============================================================
+  // N) EXPANDED ACTION COVERAGE ACROSS EXISTING MODULES
+  // ============================================================
+  // Action: Update Customer (e.g. credit limit, phone)
+  if (
+    /change.*(credit\s+limit|customer\s+phone|customer\s+details)|update.*(credit\s+limit|customer)/i.test(lower)
+  ) {
+    const cust = extractCustomer(lower) || "Ravi Traders";
+    const limitMatch = lower.match(/(?:₹|rs\.?|inr)?\s*([0-9]+(?:,[0-9]+)*(?:\.[0-9]+)?k?)/i);
+    let newLimit = 60000;
+    if (limitMatch && limitMatch[1]) {
+      const rawVal = limitMatch[1].replace(/,/g, "");
+      if (rawVal.toLowerCase().endsWith("k")) newLimit = parseFloat(rawVal) * 1000;
+      else newLimit = parseFloat(rawVal);
+    }
+    return {
+      route: "update_customer",
+      params: { customer: cust, creditLimit: newLimit },
+    };
+  }
+
+  // Action: Update Supplier
+  if (
+    /update.*supplier|change.*supplier/i.test(lower)
+  ) {
+    const supName = /south\s+india/i.test(lower) ? "South India Cement Corp" : "Coimbatore Spares Ltd";
+    return {
+      route: "update_supplier",
+      params: { supplier: supName, contactPerson: "K. Subramanian", phone: "98421 77665" },
+    };
+  }
+
+  // Action: Update Product Price / Details
+  if (
+    /update.*price\s+of|change.*price\s+of|set.*price.*to|விலை\s+மாற்று/i.test(lower)
+  ) {
+    const prodName = /ultratech/i.test(lower)
+      ? "UltraTech Cement 50kg"
+      : /asian\s+paints/i.test(lower)
+      ? "Asian Paints Apex Ultima"
+      : "UltraTech Cement 50kg";
+    const priceMatch = lower.match(/(?:₹|rs\.?|inr|to)?\s*([0-9]+(?:\.[0-9]+)?)/i);
+    const newPrice = priceMatch ? parseFloat(priceMatch[1]) : 390;
+    return {
+      route: "update_product",
+      params: { product: prodName, newSellingPrice: newPrice },
+    };
+  }
+
+  // Action: Update Invoice Status (e.g. mark as sent / paid)
+  if (
+    /mark.*invoice.*as\s+(sent|paid|delivered)|mark\s+(inv-?[0-9]+)\s+as\s+(sent|paid)|bill.*mark\s+as\s+sent/i.test(lower)
+  ) {
+    const invMatch = lower.match(/inv-?[0-9]+/i);
+    const invoiceNumber = invMatch ? invMatch[0].toUpperCase() : "INV-105";
+    const status = /paid/i.test(lower) ? "paid" : "sent";
+    return {
+      route: "update_invoice_status",
+      params: { invoiceNumber, status },
+    };
+  }
+
+  // Action: Create Automation Rule
+  if (
+    /create.*(automation|rule|alert)|alert\s+me\s+if|notify\s+me\s+when|விதி\s+உருவாக்கு/i.test(lower)
+  ) {
+    const threshMatch = lower.match(/(?:₹|rs\.?|inr)?\s*([0-9]+(?:,[0-9]+)*k?)/i);
+    let thresh = 50000;
+    if (threshMatch && threshMatch[1]) {
+      const clean = threshMatch[1].replace(/,/g, "");
+      thresh = clean.toLowerCase().endsWith("k") ? parseFloat(clean) * 1000 : parseFloat(clean);
+    }
+    return {
+      route: "create_automation_rule",
+      params: {
+        title: `Alert on Customer Balance > ₹${thresh.toLocaleString("en-IN")}`,
+        trigger: `outstanding_balance > ${thresh}`,
+        action: "Send WhatsApp & In-App Notification",
+      },
+    };
   }
 
   // Fallback: OUT OF SCOPE (never guess)
@@ -380,3 +559,12 @@ function extractCustomer(text: string): string | null {
   if (/raja\s+engineering/i.test(text)) return "Raja Engineering";
   return null;
 }
+
+function extractMemberName(text: string): string | null {
+  if (/senthil(\s+nathan)?/i.test(text)) return "Senthil Nathan";
+  if (/mani(\s+v)?/i.test(text)) return "Mani V";
+  if (/ramasamy/i.test(text)) return "Ramasamy S";
+  if (/kumar/i.test(text)) return "Kumar P";
+  return null;
+}
+

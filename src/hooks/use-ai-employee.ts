@@ -5,6 +5,7 @@ import { MOCK_AI_PROPOSALS } from "@/lib/mock-data";
 import { AIActionProposal } from "@/types";
 import { AIResponsePayload } from "@/types/ai-routes";
 import { useAuth } from "@/context/auth-context";
+import { voiceController } from "@/lib/speech";
 
 export interface Message {
   id: string;
@@ -34,7 +35,13 @@ export function useAIEmployee() {
     },
   ]);
 
-  const sendMessage = async (userText: string) => {
+  const sendMessage = async (
+    userText: string,
+    options?: { isVoice?: boolean; lang?: "ta-IN" | "en-IN" }
+  ) => {
+    const isVoice = options?.isVoice ?? false;
+    const inputLang = options?.lang || (/[\u0B80-\u0BFF]/.test(userText) ? "ta-IN" : "en-IN");
+
     const userMsg: Message = {
       id: `msg_${Date.now()}`,
       sender: "user",
@@ -88,6 +95,11 @@ export function useAIEmployee() {
       };
 
       setMessages((prev) => [...prev, aiMsg]);
+
+      // If user input was spoken voice, read the response aloud automatically
+      if (isVoice && data.reply) {
+        voiceController.speak(data.reply, inputLang);
+      }
     } catch (err) {
       console.error("Failed to query AI Employee:", err);
       const fallbackAiMsg: Message = {
@@ -97,6 +109,9 @@ export function useAIEmployee() {
         timestamp: "Just now",
       };
       setMessages((prev) => [...prev, fallbackAiMsg]);
+      if (isVoice) {
+        voiceController.speak(fallbackAiMsg.text, inputLang);
+      }
     } finally {
       setIsThinking(false);
     }

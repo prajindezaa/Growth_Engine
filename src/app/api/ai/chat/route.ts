@@ -13,7 +13,11 @@ const ALLOWED_ROUTES: Set<AIRouteId> = new Set([
   "create_quotation", "create_invoice", "record_payment", "cancel_invoice",
   "report_summary", "gst_summary", "profit_margin",
   "pending_approvals", "automation_status", "recent_notifications", "team_summary",
-  "capability_check", "greeting", "clarification_needed", "out_of_scope"
+  "change_team_member_role", "remove_team_member",
+  "capability_check", "greeting", "clarification_needed", "out_of_scope",
+  "my_account_info", "my_business_info", "my_plan_subscription", "update_business_setting",
+  "current_date_time", "app_help_navigation",
+  "update_customer", "update_supplier", "update_product", "update_invoice_status", "create_automation_rule"
 ]);
 
 export async function POST(req: NextRequest) {
@@ -38,6 +42,11 @@ export async function POST(req: NextRequest) {
 
     // Handle explicit user confirmation or rejection of an action
     if (actionUpdate) {
+      const isHighRisk =
+        actionUpdate.route === "cancel_invoice" ||
+        actionUpdate.route === "change_team_member_role" ||
+        actionUpdate.route === "remove_team_member";
+
       const audit = logActionAudit({
         route: actionUpdate.route || "action_update",
         actionType: "action_user_decision",
@@ -48,7 +57,7 @@ export async function POST(req: NextRequest) {
           decision: actionUpdate.status,
         },
         userRole,
-        isHighRisk: actionUpdate.route === "cancel_invoice",
+        isHighRisk,
       });
 
       return NextResponse.json({
@@ -61,7 +70,7 @@ export async function POST(req: NextRequest) {
     if (!prompt.trim()) {
       return NextResponse.json({
         route: "out_of_scope",
-        reply: "Please ask a question about your business sales, Khata, inventory, or orders.",
+        reply: "Please ask a question about your business sales, Khata, inventory, account, or settings.",
       });
     }
 
@@ -91,6 +100,10 @@ recent_purchases, pending_pos, create_purchase_order,
 create_quotation, create_invoice, record_payment, cancel_invoice,
 report_summary, gst_summary, profit_margin,
 pending_approvals, automation_status, recent_notifications, team_summary,
+change_team_member_role, remove_team_member,
+my_account_info, my_business_info, my_plan_subscription, update_business_setting,
+current_date_time, app_help_navigation,
+update_customer, update_supplier, update_product, update_invoice_status, create_automation_rule,
 capability_check, greeting, out_of_scope
 
 USER MESSAGE: "${prompt}"

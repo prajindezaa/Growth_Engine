@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sparkles, Send, X, Mic, Volume2, ArrowRight } from "lucide-react";
+import { Sparkles, Send, X, Mic, MicOff, Volume2, ArrowRight, Globe } from "lucide-react";
 import { useAIEmployee } from "@/hooks/use-ai-employee";
 import { AIActionCard } from "./ai-action-card";
 import { StructuredCardsView } from "./structured-cards-view";
 import { Button } from "@/components/ui/button";
+import { voiceController, SpeechLanguage } from "@/lib/speech";
 
 interface AIChatPanelProps {
   isOpen: boolean;
@@ -15,6 +16,9 @@ interface AIChatPanelProps {
 
 export function AIChatPanel({ isOpen, onClose, ai }: AIChatPanelProps) {
   const [inputText, setInputText] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [voiceLang, setVoiceLang] = useState<SpeechLanguage>("ta-IN");
+  const [voiceStatus, setVoiceStatus] = useState<string>("");
   const { messages, isThinking, sendMessage, confirmAction, cancelAction } = ai;
 
   if (!isOpen) return null;
@@ -23,15 +27,56 @@ export function AIChatPanel({ isOpen, onClose, ai }: AIChatPanelProps) {
     "Today's sales?",
     "Who owes me money?",
     "What's low in stock?",
-    "இன்னைக்கு எவ்வளவு சேல்ஸ்?",
+    "இன்னைக்கு என்ன தேதி?",
+    "What's my business GSTIN?",
   ];
-
 
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputText.trim()) return;
     sendMessage(inputText.trim());
     setInputText("");
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      voiceController.stopListening();
+      setIsListening(false);
+      setVoiceStatus("");
+      return;
+    }
+
+    setIsListening(true);
+    setVoiceStatus(voiceLang === "ta-IN" ? "கேட்கிறது... (Listening Tamil)..." : "Listening (English)...");
+
+    voiceController.startListening(voiceLang, {
+      onStart: () => {
+        setIsListening(true);
+      },
+      onInterim: (text) => {
+        setInputText(text);
+      },
+      onResult: (finalText) => {
+        setIsListening(false);
+        setVoiceStatus("");
+        setInputText("");
+        sendMessage(finalText, { isVoice: true, lang: voiceLang });
+      },
+      onError: (err) => {
+        console.warn("Voice error:", err);
+        setIsListening(false);
+        setVoiceStatus("");
+      },
+      onEnd: () => {
+        setIsListening(false);
+        setVoiceStatus("");
+      },
+    });
+  };
+
+  const handleListenText = (text: string) => {
+    const isTa = /[\u0B80-\u0BFF]/.test(text);
+    voiceController.speak(text, isTa ? "ta-IN" : "en-IN");
   };
 
   return (
@@ -55,7 +100,7 @@ export function AIChatPanel({ isOpen, onClose, ai }: AIChatPanelProps) {
           <div className="flex items-center gap-3">
             <div
               className={`w-9 h-9 rounded-xl bg-ai-gradient flex items-center justify-center text-white shadow-md ${
-                isThinking ? "animate-orb-thinking" : "animate-orb-breathe"
+                isThinking ? "animate-orb-thinking" : isListening ? "animate-pulse" : "animate-orb-breathe"
               }`}
             >
               <Sparkles className="w-5 h-5" />
@@ -68,17 +113,33 @@ export function AIChatPanel({ isOpen, onClose, ai }: AIChatPanelProps) {
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                {isThinking ? "Accessing validated business logic..." : "English • தமிழ் • Tanglish Ready"}
+                {isListening
+                  ? voiceStatus
+                  : isThinking
+                  ? "Accessing validated business logic..."
+                  : "English • தமிழ் • Tanglish Ready"}
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Language toggle for Voice STT */}
+            <button
+              onClick={() => setVoiceLang((prev) => (prev === "ta-IN" ? "en-IN" : "ta-IN"))}
+              className="px-2 py-1 rounded-lg text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-[#4F46E5] border border-indigo-100 transition-colors flex items-center gap-1"
+              title="Toggle Voice Language (Tamil / English)"
+            >
+              <Globe className="w-3 h-3" />
+              <span>{voiceLang === "ta-IN" ? "தமிழ்" : "English"}</span>
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Chat Stream Body */}
@@ -143,11 +204,11 @@ export function AIChatPanel({ isOpen, onClose, ai }: AIChatPanelProps) {
                 {/* Voice listen button for AI responses */}
                 {msg.sender === "ai" && (
                   <button
-                    onClick={() => {}}
+                    onClick={() => handleListenText(msg.text)}
                     className="mt-2 text-[11px] text-slate-400 hover:text-indigo-600 flex items-center gap-1 transition-colors"
                   >
                     <Volume2 className="w-3.5 h-3.5" />
-                    <span>Listen (Tamil / English)</span>
+                    <span>🔊 Listen</span>
                   </button>
                 )}
               </div>
@@ -166,6 +227,15 @@ export function AIChatPanel({ isOpen, onClose, ai }: AIChatPanelProps) {
               <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.timestamp}</span>
             </div>
           ))}
+
+          {isListening && (
+            <div className="flex items-center gap-2.5 p-3 bg-indigo-50 border border-indigo-200 rounded-2xl w-fit shadow-xs animate-pulse">
+              <div className="w-3.5 h-3.5 rounded-full bg-red-500 animate-ping" />
+              <span className="text-xs font-semibold text-indigo-900">
+                {voiceStatus || "Listening..."}
+              </span>
+            </div>
+          )}
 
           {isThinking && (
             <div className="flex items-center gap-2 p-3 bg-white border border-indigo-100 rounded-2xl w-fit shadow-xs animate-pulse">
@@ -200,15 +270,20 @@ export function AIChatPanel({ isOpen, onClose, ai }: AIChatPanelProps) {
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ask in English, Tamil, or Tanglish..."
+              placeholder={isListening ? "Listening... speak now" : `Ask in ${voiceLang === "ta-IN" ? "தமிழ்" : "English"}...`}
               className="w-full h-11 pl-4 pr-10 rounded-xl bg-slate-100 border border-transparent focus:border-[#4F46E5] focus:bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all"
             />
             <button
               type="button"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 p-1"
-              title="Voice (Tamil & English)"
+              onClick={toggleListening}
+              className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-colors ${
+                isListening
+                  ? "bg-red-500 text-white animate-pulse"
+                  : "text-slate-400 hover:text-indigo-600 hover:bg-slate-200/60"
+              }`}
+              title={isListening ? "Stop listening" : `Start Voice (${voiceLang === "ta-IN" ? "தமிழ்" : "English"})`}
             >
-              <Mic className="w-4 h-4" />
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </button>
           </div>
 
