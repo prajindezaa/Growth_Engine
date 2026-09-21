@@ -550,10 +550,10 @@ export function detectIntentLocally(input: string, context?: { lastMentionedInvo
   // ============================================================
   // CONVERSATIONAL & KEYWORD-BASED CATCH-ALLS FOR NATURAL SPEECH
   // ============================================================
-  // Sales / Revenue keywords
+  // Sales / Revenue keywords (including cash, money, collection, earnings)
   if (
-    /\b(sale|sales|selling|revenue|turnover|kolekshan|collection)\b/i.test(lower) ||
-    /(வியாபாரம்|விற்பனை|சேல்ஸ்)/i.test(lower)
+    /\b(sale|sales|selling|revenue|turnover|kolekshan|collection|cash|income|earnings)\b/i.test(lower) ||
+    /(வியாபாரம்|விற்பனை|சேல்ஸ்|காசு|வருமானம்|வசூல்)/i.test(lower)
   ) {
     if (/\b(month|week|period|monthly)\b|மாத/i.test(lower)) {
       return { route: "sales_by_period", params: {} };
@@ -561,7 +561,7 @@ export function detectIntentLocally(input: string, context?: { lastMentionedInvo
     if (/\b(trend|growth|growing)\b|வளர்/i.test(lower)) {
       return { route: "sales_trend", params: {} };
     }
-    if (/\b(top|best|highest|item|items)\b|அதிகம்/i.test(lower)) {
+    if (/\b(top|best|highest|item|items)\b|அதிகம்|முக்கிய/i.test(lower)) {
       return { route: "top_products", params: {} };
     }
     return { route: "today_sales", params: {} };
@@ -570,7 +570,7 @@ export function detectIntentLocally(input: string, context?: { lastMentionedInvo
   // Khata / Outstanding / Due / Receivables / Udhar keywords
   if (
     /\b(khata|udhar|jama|due|dues|owes|owing|outstanding|receivable|receivables|balance)\b/i.test(lower) ||
-    /(பாக்கி|கடன்|வசூல்)/i.test(lower)
+    /(பாக்கி|கடன்|தரணும்|கொடுக்கணும்)/i.test(lower)
   ) {
     if (/\b(supplier|vendor|payables?|tharanum)\b|சப்ளையர்/i.test(lower)) {
       return { route: "supplier_payables", params: {} };
@@ -584,18 +584,42 @@ export function detectIntentLocally(input: string, context?: { lastMentionedInvo
   // Inventory / Stock / Products keywords
   if (
     /\b(stock|inventory|item|items|product|products|goods)\b/i.test(lower) ||
-    /(சரக்கு|இருப்பு|பொருள்|ப்ராடக்ட்)/i.test(lower)
+    /(சரக்கு|இருப்பு|பொருள்|ப்ராடக்ட்|தீர்ந்து)/i.test(lower)
   ) {
-    if (/\b(low|reorder|shortage|kuraiva|koraiva)\b|குறைவ/i.test(lower)) {
+    if (/\b(low|reorder|shortage|kuraiva|koraiva)\b|குறைவ|தீர்ந்து|கம்மி/i.test(lower)) {
       return { route: "low_stock", params: {} };
     }
-    if (/\b(out|zero|empty|mudinjiducha)\b|முடிஞ்சி/i.test(lower)) {
+    if (/\b(out|zero|empty|mudinjiducha)\b|முடிஞ்சி|காலி/i.test(lower)) {
       return { route: "out_of_stock", params: {} };
     }
-    if (/\b(value|worth|valuation|cost)\b|மதிப்பு|விலை/i.test(lower)) {
+    if (/\b(value|worth|valuation|cost)\b|மதிப்பு|விலை|மதிப்பீடு/i.test(lower)) {
       return { route: "inventory_value", params: {} };
     }
     return { route: "low_stock", params: {} };
+  }
+
+  // Customers / Parties keywords
+  if (
+    /\b(customer|customers|party|parties|buyer|buyers|client|clients)\b/i.test(lower) ||
+    /(கஸ்டமர்|வாடிக்கையாளர்)/i.test(lower)
+  ) {
+    if (/\b(new|recent|add)\b|புது/i.test(lower)) {
+      return { route: "new_customers", params: {} };
+    }
+    if (/\b(top|best|biggest|large)\b|பெரிய|முக்கிய/i.test(lower)) {
+      return { route: "top_customers", params: {} };
+    }
+    const cust = extractCustomer(lower);
+    if (cust) return { route: "customer_lookup", params: { customer: cust } };
+    return { route: "top_customers", params: {} };
+  }
+
+  // Suppliers / Vendors keywords
+  if (
+    /\b(supplier|suppliers|vendor|vendors|dealer|dealers)\b/i.test(lower) ||
+    /(சப்ளையர்)/i.test(lower)
+  ) {
+    return { route: "supplier_lookup", params: { supplier: "South India Cement Corp" } };
   }
 
   // Invoice / Bill / Billing keywords
